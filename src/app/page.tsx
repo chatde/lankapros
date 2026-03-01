@@ -43,7 +43,38 @@ export default async function HomePage() {
               Sign in
             </Link>
           </div>
+          <div className="mt-6">
+            <Link
+              href="/economy"
+              className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-hover transition-colors"
+            >
+              <span>📊</span>
+              <span>Explore Sri Lanka Economy Dashboard →</span>
+            </Link>
+          </div>
         </div>
+      </div>
+
+      {/* Economy Dashboard CTA */}
+      <div className="max-w-5xl mx-auto px-4 py-12">
+        <Link href="/economy" className="block rounded-xl bg-card border border-border p-8 hover:bg-card-hover transition-colors group">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="text-5xl">📊</div>
+            <div className="text-center md:text-left flex-1">
+              <h2 className="text-2xl font-bold mb-2">Sri Lanka Pulse — Economy Dashboard</h2>
+              <p className="text-muted mb-3">
+                The most comprehensive free country tracker for Sri Lanka. Live GDP, exchange rates, stock market,
+                weather, news sentiment, strategic intelligence, and more — all from public data sources.
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-start gap-2 text-xs">
+                {['Live Data', 'Compare Mode', 'Time Machine', 'Intelligence', 'Weather', 'News', '11 Tabs'].map(tag => (
+                  <span key={tag} className="px-2 py-1 rounded-full bg-accent/10 text-accent">{tag}</span>
+                ))}
+              </div>
+            </div>
+            <span className="text-accent text-2xl group-hover:translate-x-1 transition-transform">→</span>
+          </div>
+        </Link>
       </div>
 
       {/* Features */}
