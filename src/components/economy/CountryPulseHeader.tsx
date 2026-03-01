@@ -18,7 +18,7 @@ function TickerContent() {
             <span className="text-gold mx-3 text-[8px]">&#9679;</span>
           )}
           <span className="text-muted">{metric.label}</span>
-          <span className="text-foreground font-medium">{metric.value}</span>
+          <span className="text-foreground font-medium font-terminal">{metric.value}</span>
         </span>
       ))}
     </>

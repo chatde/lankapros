@@ -187,3 +187,8 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   box-shadow: 0 0 6px rgba(212, 168, 67, 0.4);
 }
+
+/* Bloomberg Terminal utilities */
+.font-terminal { font-family: var(--font-mono, 'SF Mono', 'Consolas', monospace); }
+.text-terminal-green { color: #00ff88; }
+.text-terminal-red { color: #ff4444; }

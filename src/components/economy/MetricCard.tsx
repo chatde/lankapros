@@ -28,7 +28,7 @@ export default function MetricCard({ label, value, change, subtitle, loading, tr
   return (
     <Card>
       <p className="text-xs text-muted uppercase tracking-wide">{label}</p>
-      <p className={cn('text-2xl font-bold mt-1', change !== undefined && change < 0 ? 'text-danger' : 'text-foreground')}>
+      <p className={cn('text-2xl font-bold mt-1 font-terminal', change !== undefined && change < 0 ? 'text-danger' : 'text-foreground')}>
         {value}
       </p>
       <div className="flex items-center gap-2 mt-1">
