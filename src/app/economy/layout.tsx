@@ -1,5 +1,6 @@
 import Navbar from '@/components/layout/Navbar'
 import EconomyNav from '@/components/economy/EconomyNav'
+import CountryPulseHeader from '@/components/economy/CountryPulseHeader'
 
 export const metadata = {
   title: 'Economy | LankaPros',
@@ -10,11 +11,8 @@ export default function EconomyLayout({ children }: { children: React.ReactNode 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <CountryPulseHeader />
       <main className="max-w-5xl mx-auto px-4 py-6">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-foreground">Sri Lanka Economy</h1>
-          <p className="text-sm text-muted mt-1">Real-time economic data and indicators</p>
-        </div>
         <div className="mb-6">
           <EconomyNav />
         </div>
