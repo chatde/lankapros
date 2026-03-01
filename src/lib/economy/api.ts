@@ -35,23 +35,30 @@ async function fetchWorldBank(indicator: string, years = 15): Promise<TimeSeries
 async function fetchIMFForecast(indicator: string): Promise<TimeSeriesPoint[]> {
   const url = `https://www.imf.org/external/datamapper/api/v1/${indicator}/LKA`
 
-  const res = await fetch(url, { next: { revalidate: 86400 } })
-  if (!res.ok) return []
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 86400 },
+      headers: { 'Accept': 'application/json' },
+    })
+    if (!res.ok) return []
 
-  const json = await res.json()
-  const values = json?.values?.[indicator]?.LKA
-  if (!values) return []
+    const json = await res.json()
+    const values = json?.values?.[indicator]?.LKA
+    if (!values || typeof values !== 'object') return []
 
-  const currentYear = new Date().getFullYear()
+    const currentYear = new Date().getFullYear()
 
-  return Object.entries(values)
-    .map(([year, val]) => ({
-      year: parseInt(year),
-      value: val as number,
-      forecast: parseInt(year) > currentYear,
-    }))
-    .filter((d) => d.year >= currentYear - 10 && d.year <= currentYear + 5)
-    .sort((a, b) => a.year - b.year)
+    return Object.entries(values)
+      .map(([year, val]) => ({
+        year: parseInt(year),
+        value: val as number,
+        forecast: parseInt(year) > currentYear - 1,
+      }))
+      .filter((d) => d.year >= currentYear - 15 && d.year <= currentYear + 5)
+      .sort((a, b) => a.year - b.year)
+  } catch {
+    return []
+  }
 }
 
 // ── Exchange Rates (fawazahmed0) ────────────────────────────────
