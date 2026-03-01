@@ -1,3 +1,16 @@
+import type { Trend, TimeSeriesPoint } from './types'
+
+export function calculateTrend(data: TimeSeriesPoint[], count = 3): Trend {
+  if (data.length < 2) return 'flat'
+  const recent = data.slice(-count)
+  const first = recent[0].value
+  const last = recent[recent.length - 1].value
+  const change = ((last - first) / Math.abs(first)) * 100
+  if (change > 1) return 'up'
+  if (change < -1) return 'down'
+  return 'flat'
+}
+
 export function formatBillions(value: number): string {
   if (Math.abs(value) >= 1e9) {
     return `$${(value / 1e9).toFixed(1)}B`

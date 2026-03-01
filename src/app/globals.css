@@ -120,3 +120,21 @@ body {
 .animate-pulse-gold {
   animation: pulse-gold 2s ease-in-out infinite;
 }
+
+@keyframes trend-up {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes trend-down {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(2px); }
+}
+
+.animate-trend-up {
+  animation: trend-up 2s ease-in-out infinite;
+}
+
+.animate-trend-down {
+  animation: trend-down 2s ease-in-out infinite;
+}

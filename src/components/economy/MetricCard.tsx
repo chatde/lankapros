@@ -1,6 +1,7 @@
 import Card from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import ChangeIndicator from './ChangeIndicator'
+import type { Trend } from '@/lib/economy/types'
 
 interface MetricCardProps {
   label: string
@@ -8,9 +9,10 @@ interface MetricCardProps {
   change?: number
   subtitle?: string
   loading?: boolean
+  trend?: Trend
 }
 
-export default function MetricCard({ label, value, change, subtitle, loading }: MetricCardProps) {
+export default function MetricCard({ label, value, change, subtitle, loading, trend }: MetricCardProps) {
   if (loading) {
     return (
       <Card>
@@ -33,6 +35,18 @@ export default function MetricCard({ label, value, change, subtitle, loading }: 
         {change !== undefined && <ChangeIndicator value={change} />}
         {subtitle && <span className="text-xs text-muted">{subtitle}</span>}
       </div>
+      {trend && (
+        <span className={cn(
+          'inline-flex items-center text-xs font-medium mt-1',
+          trend === 'up' && 'text-success animate-trend-up',
+          trend === 'down' && 'text-danger animate-trend-down',
+          trend === 'flat' && 'text-muted',
+        )}>
+          {trend === 'up' && '↑ Rising'}
+          {trend === 'down' && '↓ Falling'}
+          {trend === 'flat' && '→ Stable'}
+        </span>
+      )}
     </Card>
   )
 }

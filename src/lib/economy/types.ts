@@ -79,3 +79,5 @@ export interface OverviewMetrics {
   aspiChange: number | null
   reserves: number | null
 }
+
+export type Trend = 'up' | 'down' | 'flat'
