@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server'
 
 const WB_BASE = 'https://api.worldbank.org/v2/country'
 
+const ALLOWED_COUNTRIES = new Set([
+  'LKA', 'IND', 'BGD', 'PAK', 'THA', 'VNM', 'MYS', 'SGP', 'IDN', 'PHL', 'MMR', 'NPL', 'MDV',
+])
+
 interface WorldBankEntry {
   date: string
   value: number | null
@@ -20,7 +24,7 @@ const COMPARE_INDICATORS = {
 async function fetchIndicator(country: string, indicator: string) {
   const url = `${WB_BASE}/${country}/indicator/${indicator}?format=json&per_page=20&date=${new Date().getFullYear() - 20}:${new Date().getFullYear()}`
   try {
-    const res = await fetch(url, { next: { revalidate: 86400 } })
+    const res = await fetch(url, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) })
     if (!res.ok) return []
     const json = await res.json()
     if (!json[1]) return []
@@ -35,7 +39,7 @@ async function fetchIndicator(country: string, indicator: string) {
 
 export async function GET(request: NextRequest) {
   const country = request.nextUrl.searchParams.get('country')
-  if (!country || !/^[A-Z]{3}$/.test(country)) {
+  if (!country || !ALLOWED_COUNTRIES.has(country)) {
     return NextResponse.json({ error: 'Invalid country code' }, { status: 400 })
   }
 

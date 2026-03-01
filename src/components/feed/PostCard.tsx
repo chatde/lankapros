@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
@@ -56,8 +57,8 @@ export default function PostCard({ post, currentUserId, onLikeToggle, onCommentA
           })
         }
       }
-    } catch {
-      // Silently fail
+    } catch (err) {
+      toast.error('Failed to update like. Please try again.')
     } finally {
       setLiking(false)
     }
@@ -65,7 +66,7 @@ export default function PostCard({ post, currentUserId, onLikeToggle, onCommentA
 
   async function handleDelete() {
     const supabase = createClient()
-    const { error } = await supabase.from('posts').delete().eq('id', post.id)
+    const { error } = await supabase.from('posts').delete().eq('id', post.id).eq('author_id', currentUserId)
     if (!error && onDelete) {
       onDelete(post.id)
     }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
@@ -75,8 +76,8 @@ export default function CommentSection({ postId, postAuthorId, currentUserId, on
           })
         }
       }
-    } catch {
-      // Silently fail
+    } catch (err) {
+      toast.error('Failed to post comment. Please try again.')
     } finally {
       setPosting(false)
     }

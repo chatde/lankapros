@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const res = await fetch(
       'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/lkr.json',
-      { next: { revalidate: 300 } }
+      { next: { revalidate: 300 }, signal: AbortSignal.timeout(8000) }
     )
 
     if (!res.ok) {

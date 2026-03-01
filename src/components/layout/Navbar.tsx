@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-import { Home, Users, MessageCircle, Users2, Bell, Search, LogOut, Menu, X, TrendingUp } from 'lucide-react'
+import { Home, Users, MessageCircle, Users2, Bell, Search, LogOut, Menu, X, TrendingUp, Settings } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const navItems = [
@@ -163,6 +163,19 @@ export default function Navbar() {
             <Avatar src={profile?.avatar_url} name={profile?.full_name} size="sm" />
           </Link>
 
+          <Link
+            href="/settings"
+            className={cn(
+              'hidden md:flex p-2 rounded-lg transition-colors',
+              pathname.startsWith('/settings')
+                ? 'text-accent bg-accent/10'
+                : 'text-muted hover:text-foreground hover:bg-card'
+            )}
+            title="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
+
           <button
             onClick={handleSignOut}
             className="hidden md:flex p-2 rounded-lg text-muted hover:text-danger hover:bg-card transition-colors"
@@ -217,6 +230,19 @@ export default function Navbar() {
             >
               <Avatar src={profile?.avatar_url} name={profile?.full_name} size="sm" />
               <span>{profile?.full_name || 'Profile'}</span>
+            </Link>
+            <Link
+              href="/settings"
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+                pathname.startsWith('/settings')
+                  ? 'text-accent bg-accent/10'
+                  : 'text-muted hover:text-foreground hover:bg-card'
+              )}
+            >
+              <Settings className="h-5 w-5" />
+              <span>Settings</span>
             </Link>
             <button
               onClick={handleSignOut}

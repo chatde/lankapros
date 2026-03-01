@@ -121,6 +121,10 @@ export default async function HomePage() {
       {/* Footer */}
       <footer className="border-t border-border py-8 text-center text-sm text-muted">
         <p>&copy; {new Date().getFullYear()} LankaPros. Built for Sri Lankan professionals.</p>
+        <div className="mt-3 flex justify-center gap-4">
+          <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+        </div>
       </footer>
     </div>
   )

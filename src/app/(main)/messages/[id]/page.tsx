@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, use } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
@@ -39,6 +40,9 @@ export default function ChatPage({ params }: Props) {
         .single()
 
       if (!convo) return
+
+      // Defense-in-depth: verify current user is a participant
+      if (convo.participant_1 !== user.id && convo.participant_2 !== user.id) return
 
       const otherId = convo.participant_1 === user.id ? convo.participant_2 : convo.participant_1
       const { data: profile } = await supabase
@@ -130,8 +134,8 @@ export default function ChatPage({ params }: Props) {
       }
 
       setContent('')
-    } catch {
-      // Silently fail
+    } catch (err) {
+      toast.error('Failed to send message. Please try again.')
     } finally {
       setSending(false)
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
@@ -72,9 +73,10 @@ export default function PostComposer({ onPost, groupId }: PostComposerProps) {
         setContent('')
         setImageFile(null)
         setImagePreview(null)
+        toast.success('Post published!')
       }
-    } catch {
-      // Silently fail
+    } catch (err) {
+      toast.error('Failed to create post. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -83,6 +85,20 @@ export default function PostComposer({ onPost, groupId }: PostComposerProps) {
   function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
+      e.target.value = ''
+      return
+    }
+
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      alert('File too large. Maximum size for post images is 5MB.')
+      e.target.value = ''
+      return
+    }
 
     setImageFile(file)
     const reader = new FileReader()

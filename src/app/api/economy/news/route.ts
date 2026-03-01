@@ -68,6 +68,7 @@ async function fetchFeed(url: string, source: string): Promise<NewsItem[]> {
     const res = await fetch(url, {
       next: { revalidate: 900 },
       headers: { 'User-Agent': 'LankaPros/1.0' },
+      signal: AbortSignal.timeout(8000),
     })
     if (!res.ok) return []
 

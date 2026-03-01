@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -22,6 +23,44 @@ export default function EditProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
   const [message, setMessage] = useState('')
+
+  const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+
+  function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) { setAvatarFile(null); return }
+
+    if (!allowedImageTypes.includes(file.type)) {
+      alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
+      e.target.value = ''
+      return
+    }
+    const maxSize = 2 * 1024 * 1024 // 2MB
+    if (file.size > maxSize) {
+      alert('File too large. Maximum size for avatars is 2MB.')
+      e.target.value = ''
+      return
+    }
+    setAvatarFile(file)
+  }
+
+  function handleCoverSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) { setCoverFile(null); return }
+
+    if (!allowedImageTypes.includes(file.type)) {
+      alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
+      e.target.value = ''
+      return
+    }
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      alert('File too large. Maximum size for cover photos is 5MB.')
+      e.target.value = ''
+      return
+    }
+    setCoverFile(file)
+  }
 
   useEffect(() => {
     async function load() {
@@ -107,7 +146,7 @@ export default function EditProfilePage() {
         .eq('id', user.id)
 
       if (error) {
-        setMessage(`Error: ${error.message}`)
+        toast.error(`Error: ${error.message}`)
         return
       }
 
@@ -120,10 +159,10 @@ export default function EditProfilePage() {
         )
       }
 
-      setMessage('Profile saved!')
+      toast.success('Profile updated!')
       router.refresh()
-    } catch {
-      setMessage('Error saving profile')
+    } catch (err) {
+      toast.error('Error saving profile')
     } finally {
       setSaving(false)
     }
@@ -257,11 +296,11 @@ export default function EditProfilePage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-muted mb-1">Avatar</label>
-            <input type="file" accept="image/*" onChange={e => setAvatarFile(e.target.files?.[0] || null)} className="text-sm text-muted" />
+            <input type="file" accept="image/*" onChange={handleAvatarSelect} className="text-sm text-muted" />
           </div>
           <div>
             <label className="block text-sm font-medium text-muted mb-1">Cover photo</label>
-            <input type="file" accept="image/*" onChange={e => setCoverFile(e.target.files?.[0] || null)} className="text-sm text-muted" />
+            <input type="file" accept="image/*" onChange={handleCoverSelect} className="text-sm text-muted" />
           </div>
         </div>
       </Card>

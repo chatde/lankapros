@@ -14,7 +14,11 @@ const CSE_HEADERS: HeadersInit = {
 
 export async function POST(request: NextRequest) {
   try {
-    const { endpoint } = await request.json() as { endpoint: string }
+    const body = await request.json() as { endpoint: string }
+    const endpoint = body?.endpoint
+    if (!endpoint || typeof endpoint !== 'string') {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
 
     switch (endpoint) {
       case 'market-summary':
@@ -37,6 +41,7 @@ async function getMarketSummary(): Promise<CSEMarketData> {
       method: 'POST',
       headers: CSE_HEADERS,
       cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
     })
 
     if (!res.ok) throw new Error('CSE market summary failed')
@@ -59,7 +64,7 @@ async function getMarketSummary(): Promise<CSEMarketData> {
       marketStatus: summary.marketStatus ?? 'CLOSED',
     }
   } catch (err) {
-    console.error('getMarketSummary error:', err)
+    console.error('getMarketSummary error:', err instanceof Error ? err.message : 'Unknown error')
     throw err
   }
 }
@@ -71,11 +76,13 @@ async function getTopMovers(): Promise<{ gainers: CSETopMover[]; losers: CSETopM
         method: 'POST',
         headers: CSE_HEADERS,
         cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
       }),
       fetch(`${CSE_BASE}/topLosers`, {
         method: 'POST',
         headers: CSE_HEADERS,
         cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
       }),
     ])
 
@@ -93,7 +100,7 @@ async function getTopMovers(): Promise<{ gainers: CSETopMover[]; losers: CSETopM
 
     return { gainers, losers }
   } catch (err) {
-    console.error('getTopMovers error:', err)
+    console.error('getTopMovers error:', err instanceof Error ? err.message : 'Unknown error')
     return { gainers: [], losers: [] }
   }
 }
@@ -104,6 +111,7 @@ async function getSectors(): Promise<CSESector[]> {
       method: 'POST',
       headers: CSE_HEADERS,
       cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
     })
 
     if (!res.ok) return []
@@ -119,7 +127,7 @@ async function getSectors(): Promise<CSESector[]> {
       turnover: (s.turnover as number) ?? 0,
     }))
   } catch (err) {
-    console.error('getSectors error:', err)
+    console.error('getSectors error:', err instanceof Error ? err.message : 'Unknown error')
     return []
   }
 }

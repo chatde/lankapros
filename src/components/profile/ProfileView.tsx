@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
@@ -78,8 +79,8 @@ export default function ProfileView({
           message: 'accepted your connection request',
         })
       }
-    } catch {
-      // Silently fail
+    } catch (err) {
+      toast.error('Failed to send connection request.')
     } finally {
       setLoading(false)
     }

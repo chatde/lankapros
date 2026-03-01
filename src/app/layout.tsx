@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import { Toaster } from 'sonner'
+import CookieConsent from '@/components/CookieConsent'
 import './globals.css'
 
 const geistSans = Geist({
@@ -13,6 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://lankapros.com'),
   title: 'LankaPros - Sri Lanka\'s Professional Network',
   description: 'Connect with Sri Lankan professionals. Build your career, grow your network, and showcase your expertise.',
   keywords: ['Sri Lanka', 'professional network', 'jobs', 'careers', 'LinkedIn alternative', 'LankaPros'],
@@ -40,7 +43,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
+        <Toaster theme="dark" position="bottom-right" />
         {children}
+        <CookieConsent />
       </body>
     </html>
   )

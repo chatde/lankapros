@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/ui/Avatar'
 import Card from '@/components/ui/Card'
@@ -55,8 +56,8 @@ export default function SearchPage() {
       }
 
       if (groupsData) setGroups(groupsData)
-    } catch {
-      // Silently fail
+    } catch (err) {
+      toast.error('Search failed. Please try again.')
     } finally {
       setLoading(false)
     }
