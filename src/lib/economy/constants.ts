@@ -39,6 +39,7 @@ export const TRACKED_CURRENCIES = [
 export const ECONOMY_TABS = [
   { label: 'Pulse', href: '/economy/scorecard' },
   { label: 'Intelligence', href: '/economy/intelligence' },
+  { label: 'Compare', href: '/economy/compare' },
   { label: 'Overview', href: '/economy' },
   { label: 'Exchange Rates', href: '/economy/exchange-rates' },
   { label: 'Stock Market', href: '/economy/stock-market' },
@@ -115,6 +116,22 @@ export const WB_PEOPLE_INDICATORS = {
   secondaryEnrollment: 'SE.SEC.ENRR',
   povertyRate: 'SI.POV.NAHC',
 } as const
+
+// Countries for Compare Mode
+export const COMPARE_COUNTRIES = [
+  { code: 'IND', name: 'India', flag: '\u{1F1EE}\u{1F1F3}' },
+  { code: 'BGD', name: 'Bangladesh', flag: '\u{1F1E7}\u{1F1E9}' },
+  { code: 'PAK', name: 'Pakistan', flag: '\u{1F1F5}\u{1F1F0}' },
+  { code: 'THA', name: 'Thailand', flag: '\u{1F1F9}\u{1F1ED}' },
+  { code: 'VNM', name: 'Vietnam', flag: '\u{1F1FB}\u{1F1F3}' },
+  { code: 'MYS', name: 'Malaysia', flag: '\u{1F1F2}\u{1F1FE}' },
+  { code: 'SGP', name: 'Singapore', flag: '\u{1F1F8}\u{1F1EC}' },
+  { code: 'IDN', name: 'Indonesia', flag: '\u{1F1EE}\u{1F1E9}' },
+  { code: 'PHL', name: 'Philippines', flag: '\u{1F1F5}\u{1F1ED}' },
+  { code: 'MMR', name: 'Myanmar', flag: '\u{1F1F2}\u{1F1F2}' },
+  { code: 'NPL', name: 'Nepal', flag: '\u{1F1F3}\u{1F1F5}' },
+  { code: 'MDV', name: 'Maldives', flag: '\u{1F1F2}\u{1F1FB}' },
+] as const
 
 // Chart colors
 export const CHART_COLORS = {
