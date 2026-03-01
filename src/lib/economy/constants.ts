@@ -44,6 +44,7 @@ export const ECONOMY_TABS = [
   { label: 'Macro', href: '/economy/macro' },
   { label: 'Social', href: '/economy/social' },
   { label: 'Weather', href: '/economy/weather' },
+  { label: 'News', href: '/economy/news' },
 ] as const
 
 export const SRI_LANKA_CITIES = [
