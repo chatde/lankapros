@@ -9,6 +9,7 @@ import type { OverviewMetrics, TimeSeriesPoint } from '@/lib/economy/types'
 
 interface HistoricalData {
   gdp: TimeSeriesPoint[]
+  gdpGrowth: TimeSeriesPoint[]
   inflation: TimeSeriesPoint[]
   reserves: TimeSeriesPoint[]
 }
@@ -33,18 +34,16 @@ export default function OverviewCharts({ metrics, gdpGrowth, historicalData }: O
       return point?.value ?? null
     }
 
-    const gdpGrowthPoint = gdpGrowth.find((d) => d.year === selectedYear)
-
     return {
       gdp: findValue(historicalData.gdp, selectedYear),
-      gdpGrowth: gdpGrowthPoint?.value ?? null,
+      gdpGrowth: findValue(historicalData.gdpGrowth, selectedYear),
       inflation: findValue(historicalData.inflation, selectedYear),
       usdLkr: null, // No historical exchange rate data
       aspiIndex: null,
       aspiChange: null,
       reserves: findValue(historicalData.reserves, selectedYear),
     }
-  }, [selectedYear, isLive, metrics, historicalData, gdpGrowth])
+  }, [selectedYear, isLive, metrics, historicalData])
 
   return (
     <div className="space-y-6">

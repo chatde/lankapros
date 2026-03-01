@@ -11,23 +11,31 @@ interface OverviewDashboardProps {
 }
 
 export default function OverviewDashboard({ serverMetrics }: OverviewDashboardProps) {
-  const [metrics, setMetrics] = useState(serverMetrics)
+  const [cseData, setCseData] = useState<{ aspiIndex: number | null; aspiChange: number | null }>({
+    aspiIndex: null,
+    aspiChange: null,
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadCSE() {
       const cse = await fetchCSEMarket()
       if (cse) {
-        setMetrics((prev) => ({
-          ...prev,
+        setCseData({
           aspiIndex: cse.aspiIndex,
           aspiChange: cse.aspiChangePercent,
-        }))
+        })
       }
       setLoading(false)
     }
     loadCSE()
   }, [])
+
+  const metrics = {
+    ...serverMetrics,
+    aspiIndex: cseData.aspiIndex ?? serverMetrics.aspiIndex,
+    aspiChange: cseData.aspiChange ?? serverMetrics.aspiChange,
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

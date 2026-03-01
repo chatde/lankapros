@@ -38,11 +38,18 @@ async function fetchIMFForecast(indicator: string): Promise<TimeSeriesPoint[]> {
   try {
     const res = await fetch(url, {
       next: { revalidate: 86400 },
-      headers: { 'Accept': 'application/json' },
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (compatible; LankaPros/1.0)',
+      },
     })
     if (!res.ok) return []
 
-    const json = await res.json()
+    const text = await res.text()
+    // IMF sometimes returns HTML instead of JSON — guard against it
+    if (text.startsWith('<') || !text.startsWith('{')) return []
+
+    const json = JSON.parse(text)
     const values = json?.values?.[indicator]?.LKA
     if (!values || typeof values !== 'object') return []
 
@@ -142,27 +149,43 @@ export async function fetchCSESectors(): Promise<CSESector[]> {
 // ── Aggregated Fetchers ─────────────────────────────────────────
 
 export async function fetchMacroData(): Promise<MacroData> {
-  const [gdp, gdpGrowth, inflation, debtToGdp, exports, imports, reserves] = await Promise.all([
+  const [gdp, imfGdpGrowth, wbGdpGrowth, imfInflation, wbInflation, imfDebt, wbDebt, exports, imports, reserves] = await Promise.all([
     fetchWorldBank(WB_INDICATORS.gdp),
     fetchIMFForecast(IMF_INDICATORS.gdpGrowth),
+    fetchWorldBank(WB_INDICATORS.gdpGrowth),
     fetchIMFForecast(IMF_INDICATORS.inflation),
+    fetchWorldBank(WB_INDICATORS.inflation),
     fetchIMFForecast(IMF_INDICATORS.debtToGdp),
+    fetchWorldBank(WB_INDICATORS.debtToGdp),
     fetchWorldBank(WB_INDICATORS.exports),
     fetchWorldBank(WB_INDICATORS.imports),
     fetchWorldBank(WB_INDICATORS.reserves),
   ])
 
-  return { gdp, gdpGrowth, inflation, debtToGdp, exports, imports, reserves }
+  return {
+    gdp,
+    gdpGrowth: imfGdpGrowth.length > 0 ? imfGdpGrowth : wbGdpGrowth,
+    inflation: imfInflation.length > 0 ? imfInflation : wbInflation,
+    debtToGdp: imfDebt.length > 0 ? imfDebt : wbDebt,
+    exports,
+    imports,
+    reserves,
+  }
 }
 
 export async function fetchSocialData(): Promise<SocialData> {
-  const [unemployment, tourismArrivals, tourismReceipts] = await Promise.all([
+  const [imfUnemployment, wbUnemployment, tourismArrivals, tourismReceipts] = await Promise.all([
     fetchIMFForecast(IMF_INDICATORS.unemployment),
+    fetchWorldBank(WB_INDICATORS.unemployment),
     fetchWorldBank(WB_INDICATORS.tourismArrivals),
     fetchWorldBank(WB_INDICATORS.tourismReceipts),
   ])
 
-  return { unemployment, tourismArrivals, tourismReceipts }
+  return {
+    unemployment: imfUnemployment.length > 0 ? imfUnemployment : wbUnemployment,
+    tourismArrivals,
+    tourismReceipts,
+  }
 }
 
 export async function fetchOverviewMetrics(): Promise<OverviewMetrics> {
