@@ -63,22 +63,36 @@ async function fetchIMFForecast(indicator: string): Promise<TimeSeriesPoint[]> {
 
 // ── Exchange Rates (fawazahmed0) ────────────────────────────────
 
+// Client-side version (used by ExchangeRatePanel and CurrencyConverter)
 export async function fetchExchangeRates(): Promise<ExchangeRate[]> {
+  try {
+    const res = await fetch('/api/economy/exchange-rates')
+    if (!res.ok) return []
+    return await res.json()
+  } catch {
+    return []
+  }
+}
+
+// Server-side version (used by fetchOverviewMetrics)
+async function fetchExchangeRatesServer(): Promise<ExchangeRate[]> {
   const url = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/lkr.json'
+  try {
+    const res = await fetch(url, { next: { revalidate: 300 } })
+    if (!res.ok) return []
+    const json = await res.json()
+    const rates = json.lkr as Record<string, number>
+    if (!rates) return []
 
-  const res = await fetch(url, { next: { revalidate: 300 } }) // 5min cache
-  if (!res.ok) return []
-
-  const json = await res.json()
-  const rates = json.lkr as Record<string, number>
-  if (!rates) return []
-
-  return TRACKED_CURRENCIES.map((curr) => ({
-    currency: curr.name,
-    code: curr.code.toUpperCase(),
-    rate: rates[curr.code] ? 1 / rates[curr.code] : 0,
-    flag: curr.flag,
-  })).filter((r) => r.rate > 0)
+    return TRACKED_CURRENCIES.map((curr) => ({
+      currency: curr.name,
+      code: curr.code.toUpperCase(),
+      rate: rates[curr.code] ? 1 / rates[curr.code] : 0,
+      flag: curr.flag,
+    })).filter((r) => r.rate > 0)
+  } catch {
+    return []
+  }
 }
 
 // ── CSE (Colombo Stock Exchange) ────────────────────────────────
@@ -156,7 +170,7 @@ export async function fetchOverviewMetrics(): Promise<OverviewMetrics> {
     fetchWorldBank(WB_INDICATORS.gdp, 3),
     fetchWorldBank(WB_INDICATORS.gdpGrowth, 3),
     fetchWorldBank(WB_INDICATORS.inflation, 3),
-    fetchExchangeRates(),
+    fetchExchangeRatesServer(),
     fetchWorldBank(WB_INDICATORS.reserves, 3),
   ])
 
