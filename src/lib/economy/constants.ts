@@ -37,6 +37,7 @@ export const TRACKED_CURRENCIES = [
 
 // Economy sub-tab navigation
 export const ECONOMY_TABS = [
+  { label: 'Pulse', href: '/economy/scorecard' },
   { label: 'Intelligence', href: '/economy/intelligence' },
   { label: 'Overview', href: '/economy' },
   { label: 'Exchange Rates', href: '/economy/exchange-rates' },
