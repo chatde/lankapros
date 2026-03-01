@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-import { Home, Users, MessageCircle, Users2, Bell, Search, LogOut, Menu, X } from 'lucide-react'
+import { Home, Users, MessageCircle, Users2, Bell, Search, LogOut, Menu, X, TrendingUp } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { label: 'Messages', href: '/messages', icon: MessageCircle },
   { label: 'Groups', href: '/groups', icon: Users2 },
   { label: 'Notifications', href: '/notifications', icon: Bell },
+  { label: 'Economy', href: '/economy', icon: TrendingUp },
 ]
 
 export default function Navbar() {
