@@ -37,12 +37,32 @@ export const TRACKED_CURRENCIES = [
 
 // Economy sub-tab navigation
 export const ECONOMY_TABS = [
+  { label: 'Intelligence', href: '/economy/intelligence' },
   { label: 'Overview', href: '/economy' },
   { label: 'Exchange Rates', href: '/economy/exchange-rates' },
   { label: 'Stock Market', href: '/economy/stock-market' },
   { label: 'Macro', href: '/economy/macro' },
   { label: 'Social', href: '/economy/social' },
 ] as const
+
+// Intelligence indicators for cross-country analysis
+export const INTELLIGENCE_INDICATORS = {
+  gdpPerCapita: 'NY.GDP.PCAP.CD',
+  gdpPerCapitaGrowth: 'NY.GDP.PCAP.KD.ZG',
+  exportsGoods: 'NE.EXP.GNFS.CD',
+  importsGoods: 'NE.IMP.GNFS.CD',
+  fdi: 'BX.KLT.DINV.CD.WD',
+  portContainers: 'IS.SHP.GCNW.XQ',
+  internetUsers: 'IT.NET.USER.ZS',
+  mobileSubscriptions: 'IT.CEL.SETS.P2',
+  lifeExpectancy: 'SP.DYN.LE00.IN',
+  literacy: 'SE.ADT.LITR.ZS',
+  population: 'SP.POP.TOTL',
+  urbanPop: 'SP.URB.TOTL.IN.ZS',
+  highTechExports: 'TX.VAL.TECH.CD',
+  researchSpending: 'GB.XPD.RSDV.GD.ZS',
+  easeOfBusiness: 'IC.BUS.DFRN.XQ',
+} as const
 
 // Chart colors
 export const CHART_COLORS = {

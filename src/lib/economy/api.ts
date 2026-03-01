@@ -187,4 +187,24 @@ export async function fetchOverviewMetrics(): Promise<OverviewMetrics> {
   }
 }
 
+export async function fetchWorldBankForCountry(
+  country: string,
+  indicator: string,
+  years = 30
+): Promise<TimeSeriesPoint[]> {
+  const url = `${WB_BASE}/${country}/indicator/${indicator}?format=json&per_page=${years}&date=${new Date().getFullYear() - years}:${new Date().getFullYear()}`
+  try {
+    const res = await fetch(url, { next: { revalidate: 86400 } })
+    if (!res.ok) return []
+    const json = await res.json()
+    if (!json[1]) return []
+    return (json[1] as WorldBankIndicator[])
+      .filter((d) => d.value !== null)
+      .map((d) => ({ year: parseInt(d.date), value: d.value as number }))
+      .sort((a, b) => a.year - b.year)
+  } catch {
+    return []
+  }
+}
+
 export { fetchWorldBank, fetchIMFForecast }
