@@ -3,6 +3,15 @@ import type { CSEMarketData, CSETopMover, CSESector } from '@/lib/economy/types'
 
 const CSE_BASE = 'https://www.cse.lk/api'
 
+const CSE_HEADERS: HeadersInit = {
+  'Content-Type': 'application/json',
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Origin': 'https://www.cse.lk',
+  'Referer': 'https://www.cse.lk/',
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { endpoint } = await request.json() as { endpoint: string }
@@ -23,79 +32,94 @@ export async function POST(request: NextRequest) {
 }
 
 async function getMarketSummary(): Promise<CSEMarketData> {
-  const res = await fetch(`${CSE_BASE}/marketSummary`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    next: { revalidate: 60 },
-  })
+  try {
+    const res = await fetch(`${CSE_BASE}/marketSummary`, {
+      method: 'POST',
+      headers: CSE_HEADERS,
+      cache: 'no-store',
+    })
 
-  if (!res.ok) throw new Error('CSE market summary failed')
+    if (!res.ok) throw new Error('CSE market summary failed')
 
-  const data = await res.json()
-  const summary = data?.reqMarketSummery
+    const data = await res.json()
+    const summary = data?.reqMarketSummery
 
-  if (!summary) throw new Error('Invalid CSE response')
+    if (!summary) throw new Error('Invalid CSE response')
 
-  return {
-    aspiIndex: summary.aspiIndex ?? 0,
-    aspiChange: summary.aspiPointChange ?? 0,
-    aspiChangePercent: summary.aspiPerChange ?? 0,
-    sp20Index: summary.sp20Index ?? 0,
-    sp20Change: summary.sp20PointChange ?? 0,
-    sp20ChangePercent: summary.sp20PerChange ?? 0,
-    totalVolume: summary.totalVolume ?? 0,
-    totalTurnover: summary.totalTurnover ?? 0,
-    totalTrades: summary.totalTrades ?? 0,
-    marketStatus: summary.marketStatus ?? 'CLOSED',
+    return {
+      aspiIndex: summary.aspiIndex ?? 0,
+      aspiChange: summary.aspiPointChange ?? 0,
+      aspiChangePercent: summary.aspiPerChange ?? 0,
+      sp20Index: summary.sp20Index ?? 0,
+      sp20Change: summary.sp20PointChange ?? 0,
+      sp20ChangePercent: summary.sp20PerChange ?? 0,
+      totalVolume: summary.totalVolume ?? 0,
+      totalTurnover: summary.totalTurnover ?? 0,
+      totalTrades: summary.totalTrades ?? 0,
+      marketStatus: summary.marketStatus ?? 'CLOSED',
+    }
+  } catch (err) {
+    console.error('getMarketSummary error:', err)
+    throw err
   }
 }
 
 async function getTopMovers(): Promise<{ gainers: CSETopMover[]; losers: CSETopMover[] }> {
-  const [gainRes, loseRes] = await Promise.all([
-    fetch(`${CSE_BASE}/topGainers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 60 },
-    }),
-    fetch(`${CSE_BASE}/topLosers`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      next: { revalidate: 60 },
-    }),
-  ])
+  try {
+    const [gainRes, loseRes] = await Promise.all([
+      fetch(`${CSE_BASE}/topGainers`, {
+        method: 'POST',
+        headers: CSE_HEADERS,
+        cache: 'no-store',
+      }),
+      fetch(`${CSE_BASE}/topLosers`, {
+        method: 'POST',
+        headers: CSE_HEADERS,
+        cache: 'no-store',
+      }),
+    ])
 
-  const mapMover = (item: Record<string, unknown>): CSETopMover => ({
-    symbol: (item.symbol as string) ?? '',
-    name: (item.name as string) ?? '',
-    price: (item.price as number) ?? 0,
-    change: (item.change as number) ?? 0,
-    changePercent: (item.percentageChange as number) ?? 0,
-    volume: (item.volume as number) ?? 0,
-  })
+    const mapMover = (item: Record<string, unknown>): CSETopMover => ({
+      symbol: (item.symbol as string) ?? '',
+      name: (item.name as string) ?? '',
+      price: (item.price as number) ?? 0,
+      change: (item.change as number) ?? 0,
+      changePercent: (item.percentageChange as number) ?? 0,
+      volume: (item.volume as number) ?? 0,
+    })
 
-  const gainers = gainRes.ok ? ((await gainRes.json()) as Record<string, unknown>[]).slice(0, 10).map(mapMover) : []
-  const losers = loseRes.ok ? ((await loseRes.json()) as Record<string, unknown>[]).slice(0, 10).map(mapMover) : []
+    const gainers = gainRes.ok ? ((await gainRes.json()) as Record<string, unknown>[]).slice(0, 10).map(mapMover) : []
+    const losers = loseRes.ok ? ((await loseRes.json()) as Record<string, unknown>[]).slice(0, 10).map(mapMover) : []
 
-  return { gainers, losers }
+    return { gainers, losers }
+  } catch (err) {
+    console.error('getTopMovers error:', err)
+    return { gainers: [], losers: [] }
+  }
 }
 
 async function getSectors(): Promise<CSESector[]> {
-  const res = await fetch(`${CSE_BASE}/sectorSummary`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    next: { revalidate: 60 },
-  })
+  try {
+    const res = await fetch(`${CSE_BASE}/sectorSummary`, {
+      method: 'POST',
+      headers: CSE_HEADERS,
+      cache: 'no-store',
+    })
 
-  if (!res.ok) return []
+    if (!res.ok) return []
 
-  const data = (await res.json()) as Record<string, unknown>[]
+    const data = (await res.json()) as Record<string, unknown>[]
 
-  return data.slice(0, 20).map((s) => ({
-    sector: (s.sector as string) ?? '',
-    index: (s.index as number) ?? 0,
-    change: (s.change as number) ?? 0,
-    changePercent: (s.percentageChange as number) ?? 0,
-    volume: (s.volume as number) ?? 0,
-    turnover: (s.turnover as number) ?? 0,
-  }))
+    return data.slice(0, 20).map((s) => ({
+      sector: (s.sector as string) ?? '',
+      index: (s.index as number) ?? 0,
+      change: (s.change as number) ?? 0,
+      changePercent: (s.percentageChange as number) ?? 0,
+      volume: (s.volume as number) ?? 0,
+      turnover: (s.turnover as number) ?? 0,
+    }))
+  } catch (err) {
+    console.error('getSectors error:', err)
+    return []
+  }
 }
