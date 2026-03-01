@@ -26,7 +26,7 @@ export default function SingaporeGapChart({ data, sgpMatchYear }: SingaporeGapCh
   return (
     <div className="rounded-xl bg-[#161616] border border-[#2a2a2a] p-4">
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm font-medium text-white">GDP per Capita — Sri Lanka vs Singapore</p>
+        <p className="text-sm font-medium text-white">GDP per Capita — Sri Lanka vs Regional Benchmark</p>
         <div className="flex items-center gap-4 text-xs">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-0.5 bg-[#D4A843] inline-block" />

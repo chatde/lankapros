@@ -6,7 +6,7 @@ import EconomyLoading from '../loading'
 
 export const metadata: Metadata = {
   title: 'Strategic Intelligence | LankaPros Economy',
-  description: 'AI-computed national intelligence — Sri Lanka vs Singapore trajectory, sector opportunities, debt sustainability, and strategic outlook.',
+  description: 'AI-computed strategic intelligence for Sri Lanka — development trajectory, sector opportunities, debt sustainability, human capital analysis, and 90-day outlook.',
 }
 
 async function IntelligenceContent() {

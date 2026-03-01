@@ -59,34 +59,36 @@ export default function IntelligenceDashboard({ data }: IntelligenceDashboardPro
           currently produces {gdpPerCapitaStr} per person annually.
           {latestGrowth !== 0 && ` The economy is growing at ${latestGrowth > 0 ? '+' : ''}${latestGrowth.toFixed(1)}%.`}
           {latestReserves > 0 && ` Foreign reserves stand at ${formatBillions(latestReserves)}.`}
-          {' '}This intelligence brief analyzes Sri Lanka{"'"}s trajectory against Singapore{"'"}s development path,
-          identifies high-potential sectors, and projects debt sustainability scenarios.
+          {' '}This intelligence brief analyzes Sri Lanka{"'"}s national trajectory, benchmarks against
+          regional success stories, identifies high-potential sectors, and projects debt sustainability
+          scenarios — the kind of strategic analysis that shapes policy.
         </p>
       </InsightCard>
 
-      {/* Singapore Gap */}
+      {/* Development Trajectory */}
       <section>
         <SectionHeader
-          title="The Singapore Gap"
-          subtitle="Two island nations, divergent trajectories — what can Sri Lanka learn?"
+          title="Development Trajectory"
+          subtitle="Where Sri Lanka sits among Asian growth stories — and what the data says is possible"
         />
         <div className="space-y-4">
-          <InsightCard title="Development Timeline" icon="\u{1F4CA}">
+          <InsightCard title="The Path Forward" icon="\u{1F4CA}">
             {gap.sgpMatchYear ? (
               <p>
-                Singapore was at Sri Lanka{"'"}s current GDP per capita ({gdpPerCapitaStr}) in <strong>{gap.sgpMatchYear}</strong>.
-                In the {new Date().getFullYear() - gap.sgpMatchYear} years since, Singapore grew its per-capita income{' '}
-                <strong>{gap.sgpGrowthSinceMatch.toFixed(1)}x</strong> to $
-                {gap.currentSgpGdpPc.toLocaleString(undefined, { maximumFractionDigits: 0 })}.
-                Today, Singapore{"'"}s GDP per capita is <strong>{gap.gapMultiple.toFixed(1)}x</strong> higher than Sri Lanka{"'"}s.
-                This gap represents both the challenge and the ceiling — proof that a small tropical island can reach
-                first-world income levels.
+                Nations like Singapore, Malaysia, and Vietnam have proven that small, strategically-located
+                Asian economies can achieve rapid transformation. For context, Singapore was at Sri Lanka{"'"}s
+                current GDP per capita ({gdpPerCapitaStr}) in <strong>{gap.sgpMatchYear}</strong> — and grew{' '}
+                <strong>{gap.sgpGrowthSinceMatch.toFixed(1)}x</strong> since then. Sri Lanka{"'"}s location on
+                the Indian Ocean{"'"}s busiest shipping lane, its {latestPop > 0 ? `${(latestPop / 1e6).toFixed(0)}M` : ''} English-literate
+                workforce, and recent economic stabilization create a foundation for similar — though uniquely
+                Sri Lankan — growth trajectories.
               </p>
             ) : (
               <p>
-                Singapore{"'"}s GDP per capita (${gap.currentSgpGdpPc.toLocaleString(undefined, { maximumFractionDigits: 0 })})
-                is <strong>{gap.gapMultiple.toFixed(1)}x</strong> higher than Sri Lanka{"'"}s ({gdpPerCapitaStr}).
-                Closing this gap requires sustained structural reforms, export diversification, and human capital investment.
+                Sri Lanka{"'"}s GDP per capita ({gdpPerCapitaStr}) positions it at a critical inflection point.
+                Regional benchmarks like Singapore (${gap.currentSgpGdpPc.toLocaleString(undefined, { maximumFractionDigits: 0 })})
+                show the ceiling for small Asian island economies is far higher.
+                Sustained structural reforms, export diversification, and human capital investment are the levers.
               </p>
             )}
           </InsightCard>
@@ -139,7 +141,7 @@ export default function IntelligenceDashboard({ data }: IntelligenceDashboardPro
       <section>
         <SectionHeader
           title="Sri Lanka's Hidden Edge"
-          subtitle="Human capital advantages vs historical Singapore at the same GDP level"
+          subtitle="Human capital advantages vs nations at the same stage of development"
         />
         {humanCapital.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,7 +234,7 @@ export default function IntelligenceDashboard({ data }: IntelligenceDashboardPro
 
       {/* Data Source */}
       <p className="text-xs text-[#555555] text-center pb-4">
-        Data: World Bank Open Data &middot; Updated daily &middot; All analysis computed from real-time indicators
+        Data: World Bank Open Data &middot; IMF WEO &middot; Updated daily &middot; All analysis computed from real-time indicators &middot; Built for Sri Lanka
       </p>
     </div>
   )
