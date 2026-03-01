@@ -44,6 +44,7 @@ export const ECONOMY_TABS = [
   { label: 'Macro', href: '/economy/macro' },
   { label: 'Social', href: '/economy/social' },
   { label: 'Weather', href: '/economy/weather' },
+  { label: 'People', href: '/economy/people' },
   { label: 'News', href: '/economy/news' },
 ] as const
 
@@ -96,6 +97,22 @@ export const INTELLIGENCE_INDICATORS = {
   highTechExports: 'TX.VAL.TECH.CD',
   researchSpending: 'GB.XPD.RSDV.GD.ZS',
   easeOfBusiness: 'IC.BUS.DFRN.XQ',
+} as const
+
+// World Bank People / Demographics indicators
+export const WB_PEOPLE_INDICATORS = {
+  population: 'SP.POP.TOTL',
+  popGrowth: 'SP.POP.GROW',
+  lifeExpectancy: 'SP.DYN.LE00.IN',
+  literacy: 'SE.ADT.LITR.ZS',
+  birthRate: 'SP.DYN.CBRT.IN',
+  deathRate: 'SP.DYN.CDRT.IN',
+  urbanPop: 'SP.URB.TOTL.IN.ZS',
+  internetUsers: 'IT.NET.USER.ZS',
+  mobileSubscriptions: 'IT.CEL.SETS.P2',
+  primaryEnrollment: 'SE.PRM.ENRR',
+  secondaryEnrollment: 'SE.SEC.ENRR',
+  povertyRate: 'SI.POV.NAHC',
 } as const
 
 // Chart colors
