@@ -43,7 +43,40 @@ export const ECONOMY_TABS = [
   { label: 'Stock Market', href: '/economy/stock-market' },
   { label: 'Macro', href: '/economy/macro' },
   { label: 'Social', href: '/economy/social' },
+  { label: 'Weather', href: '/economy/weather' },
 ] as const
+
+export const SRI_LANKA_CITIES = [
+  { name: 'Colombo', lat: 6.9271, lon: 79.8612, icon: '🏙️' },
+  { name: 'Kandy', lat: 7.2906, lon: 80.6337, icon: '🏔️' },
+  { name: 'Galle', lat: 6.0535, lon: 80.2210, icon: '🏖️' },
+  { name: 'Jaffna', lat: 9.6615, lon: 80.0255, icon: '🌴' },
+  { name: 'Trincomalee', lat: 8.5874, lon: 81.2152, icon: '⛵' },
+  { name: 'Anuradhapura', lat: 8.3114, lon: 80.4037, icon: '🏛️' },
+  { name: 'Nuwara Eliya', lat: 6.9497, lon: 80.7891, icon: '🍃' },
+  { name: 'Batticaloa', lat: 7.7310, lon: 81.6747, icon: '🌊' },
+] as const
+
+export const WEATHER_CODES: Record<number, { label: string; icon: string }> = {
+  0: { label: 'Clear sky', icon: '☀️' },
+  1: { label: 'Mainly clear', icon: '🌤️' },
+  2: { label: 'Partly cloudy', icon: '⛅' },
+  3: { label: 'Overcast', icon: '☁️' },
+  45: { label: 'Fog', icon: '🌫️' },
+  48: { label: 'Rime fog', icon: '🌫️' },
+  51: { label: 'Light drizzle', icon: '🌦️' },
+  53: { label: 'Moderate drizzle', icon: '🌦️' },
+  55: { label: 'Dense drizzle', icon: '🌧️' },
+  61: { label: 'Slight rain', icon: '🌧️' },
+  63: { label: 'Moderate rain', icon: '🌧️' },
+  65: { label: 'Heavy rain', icon: '🌧️' },
+  80: { label: 'Slight showers', icon: '🌦️' },
+  81: { label: 'Moderate showers', icon: '🌧️' },
+  82: { label: 'Violent showers', icon: '⛈️' },
+  95: { label: 'Thunderstorm', icon: '⛈️' },
+  96: { label: 'Thunderstorm + hail', icon: '⛈️' },
+  99: { label: 'Thunderstorm + heavy hail', icon: '⛈️' },
+}
 
 // Intelligence indicators for cross-country analysis
 export const INTELLIGENCE_INDICATORS = {
