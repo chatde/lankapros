@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import TimeSeriesChart from './TimeSeriesChart'
+import dynamic from 'next/dynamic'
 import SectionHeader from './SectionHeader'
 import OverviewDashboard from './OverviewDashboard'
 import TimeMachine from './TimeMachine'
 import type { OverviewMetrics, TimeSeriesPoint } from '@/lib/economy/types'
+
+const TimeSeriesChart = dynamic(() => import('./TimeSeriesChart'), { ssr: false })
 
 interface HistoricalData {
   gdp: TimeSeriesPoint[]

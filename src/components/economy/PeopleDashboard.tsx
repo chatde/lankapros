@@ -1,15 +1,26 @@
 'use client'
 
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts'
+import dynamic from 'next/dynamic'
 import MetricCard from './MetricCard'
 import SectionHeader from './SectionHeader'
-import TimeSeriesChart from './TimeSeriesChart'
 import Card from '@/components/ui/Card'
 import { formatNumber } from '@/lib/economy/format'
 import { calculateTrend } from '@/lib/economy/format'
 import { CHART_COLORS } from '@/lib/economy/constants'
 import type { PeopleData } from '@/lib/economy/people-api'
 import type { TimeSeriesPoint } from '@/lib/economy/types'
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+} from 'recharts'
+
+const TimeSeriesChart = dynamic(() => import('./TimeSeriesChart'), { ssr: false })
 
 interface PeopleDashboardProps {
   data: PeopleData

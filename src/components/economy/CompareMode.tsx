@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { COMPARE_COUNTRIES } from '@/lib/economy/constants'
-import CompareChart from './CompareChart'
+
+const CompareChart = dynamic(() => import('./CompareChart'), { ssr: false })
 
 interface DataPoint {
   year: number

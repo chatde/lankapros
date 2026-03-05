@@ -1,12 +1,14 @@
 'use client'
 
-import GDPChart from './GDPChart'
-import DebtChart from './DebtChart'
-import TradeBalanceChart from './TradeBalanceChart'
-import TimeSeriesChart from './TimeSeriesChart'
+import dynamic from 'next/dynamic'
 import SectionHeader from './SectionHeader'
 import { formatBillions } from '@/lib/economy/format'
 import type { MacroData } from '@/lib/economy/types'
+
+const GDPChart = dynamic(() => import('./GDPChart'), { ssr: false })
+const DebtChart = dynamic(() => import('./DebtChart'), { ssr: false })
+const TradeBalanceChart = dynamic(() => import('./TradeBalanceChart'), { ssr: false })
+const TimeSeriesChart = dynamic(() => import('./TimeSeriesChart'), { ssr: false })
 
 interface MacroChartsProps {
   data: MacroData

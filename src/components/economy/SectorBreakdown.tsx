@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { fetchCSESectors } from '@/lib/economy/api'
 import { formatNumber } from '@/lib/economy/format'
 import type { CSESector } from '@/lib/economy/types'
-import BarChartWidget from './BarChartWidget'
+
+const BarChartWidget = dynamic(() => import('./BarChartWidget'), { ssr: false })
 
 export default function SectorBreakdown() {
   const [sectors, setSectors] = useState<CSESector[]>([])
