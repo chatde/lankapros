@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, DM_Serif_Display } from 'next/font/google'
 import { Toaster } from 'sonner'
 import CookieConsent from '@/components/CookieConsent'
 import './globals.css'
@@ -14,6 +14,14 @@ const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
   display: 'swap',
+})
+
+const dmSerifDisplay = DM_Serif_Display({
+  variable: '--font-dm-serif',
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400'],
+  style: ['normal', 'italic'],
 })
 
 export const metadata: Metadata = {
@@ -43,7 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${geistSans.variable} ${geistMono.variable} ${dmSerifDisplay.variable} antialiased bg-background text-foreground`}
       >
         <Toaster theme="dark" position="bottom-right" />
         {children}

@@ -17,15 +17,13 @@ export default async function HomePage() {
         <div className="pattern-lotus absolute inset-0 opacity-30" />
         <div className="relative max-w-5xl mx-auto px-4 py-20 text-center">
           <div className="inline-flex items-center gap-3 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center">
-              <span className="text-black font-bold text-2xl">LP</span>
-            </div>
+            <div className="text-2xl tracking-widest font-serif-display text-accent opacity-60">✦ LP ✦</div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          <h1 className="font-serif-display text-4xl md:text-6xl font-bold mb-4 animate-lk-fade-up">
             Lanka<span className="text-accent">Pros</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted mb-2">Ayubowan!</p>
-          <p className="text-lg text-muted max-w-xl mx-auto mb-8">
+          <p className="font-serif-display text-2xl md:text-3xl text-accent/70 italic mb-2">Ayubowan!</p>
+          <p className="text-lg text-muted max-w-xl mx-auto mb-8 animate-lk-fade-up-2">
             Sri Lanka&apos;s professional network. Connect, collaborate, and grow your career
             with professionals across the island.
           </p>
@@ -57,18 +55,20 @@ export default async function HomePage() {
 
       {/* Economy Dashboard CTA */}
       <div className="max-w-5xl mx-auto px-4 py-12">
-        <Link href="/economy" className="block rounded-xl bg-card border border-border p-8 hover:bg-card-hover transition-colors group">
+        <Link href="/economy" className="economy-card block rounded-xl bg-card border border-border p-8 hover:bg-card-hover transition-colors group">
           <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="text-5xl">📊</div>
+            <div className="w-16 h-16 rounded-xl border border-accent/20 bg-accent/8 flex items-center justify-center text-2xl text-accent flex-shrink-0">
+              ◈
+            </div>
             <div className="text-center md:text-left flex-1">
-              <h2 className="text-2xl font-bold mb-2">Sri Lanka Pulse — Economy Dashboard</h2>
+              <h2 className="font-serif-display text-2xl font-bold mb-2 italic">Sri Lanka Pulse — Economy Dashboard</h2>
               <p className="text-muted mb-3">
                 The most comprehensive free country tracker for Sri Lanka. Live GDP, exchange rates, stock market,
                 weather, news sentiment, strategic intelligence, and more — all from public data sources.
               </p>
               <div className="flex flex-wrap justify-center md:justify-start gap-2 text-xs">
                 {['Live Data', 'Compare Mode', 'Time Machine', 'Intelligence', 'Weather', 'News', '11 Tabs'].map(tag => (
-                  <span key={tag} className="px-2 py-1 rounded-full bg-accent/10 text-accent">{tag}</span>
+                  <span key={tag} className="data-tag px-2 py-1 rounded-full bg-accent/10 text-accent text-xs">{tag}</span>
                 ))}
               </div>
             </div>
