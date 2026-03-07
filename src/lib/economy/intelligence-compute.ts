@@ -138,7 +138,6 @@ export function computeSectorOpportunities(
 
   // Medical Tourism
   const lifeExp = lka.lifeExpectancy.at(-1)?.value ?? 0
-  const sgpLifeExp = sgp.lifeExpectancy.at(-1)?.value ?? 0
   const medScore = Math.min(80, Math.max(40, lifeExp * 1.1 - 5))
   opportunities.push({
     sector: 'Medical Tourism',

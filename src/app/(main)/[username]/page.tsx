@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProfileView from '@/components/profile/ProfileView'
-import type { Profile, Connection, Experience, Education, Skill, Industry } from '@/types/database'
+import type { Profile, Connection } from '@/types/database'
 
 interface Props {
   params: Promise<{ username: string }>

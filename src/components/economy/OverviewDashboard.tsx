@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import MetricCard from './MetricCard'
 import { fetchCSEMarket } from '@/lib/economy/api'
 import { formatBillions, formatPercent } from '@/lib/economy/format'
-import type { OverviewMetrics, Trend } from '@/lib/economy/types'
+import type { OverviewMetrics } from '@/lib/economy/types'
 
 interface OverviewDashboardProps {
   serverMetrics: OverviewMetrics

@@ -75,7 +75,7 @@ export default function PostComposer({ onPost, groupId }: PostComposerProps) {
         setImagePreview(null)
         toast.success('Post published!')
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to create post. Please try again.')
     } finally {
       setLoading(false)

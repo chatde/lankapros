@@ -76,7 +76,7 @@ export default function CommentSection({ postId, postAuthorId, currentUserId, on
           })
         }
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to post comment. Please try again.')
     } finally {
       setPosting(false)

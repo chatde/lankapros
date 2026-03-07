@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, startTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard from '@/components/feed/PostCard'
@@ -59,7 +59,7 @@ export default function FeedPage() {
 
   useEffect(() => {
     offsetRef.current = 0
-    loadPosts(true)
+    startTransition(() => { void loadPosts(true) })
   }, [loadPosts])
 
   // Infinite scroll

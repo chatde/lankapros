@@ -41,7 +41,6 @@ export default function NewsPulse() {
 
   const positive = items.filter((i) => i.sentiment === 'positive').length
   const negative = items.filter((i) => i.sentiment === 'negative').length
-  const neutral = items.filter((i) => i.sentiment === 'neutral').length
   const total = items.length || 1
 
   const positivePct = Math.round((positive / total) * 100)

@@ -79,7 +79,7 @@ export default function ProfileView({
           message: 'accepted your connection request',
         })
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to send connection request.')
     } finally {
       setLoading(false)

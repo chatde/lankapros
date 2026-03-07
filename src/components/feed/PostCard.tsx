@@ -57,7 +57,7 @@ export default function PostCard({ post, currentUserId, onLikeToggle, onCommentA
           })
         }
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error('Failed to update like. Please try again.')
     } finally {
       setLiking(false)
