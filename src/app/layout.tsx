@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   title: 'LankaPros - Sri Lanka\'s Professional Network',
   description: 'Connect with Sri Lankan professionals. Build your career, grow your network, and showcase your expertise.',
   keywords: ['Sri Lanka', 'professional network', 'jobs', 'careers', 'LinkedIn alternative', 'LankaPros'],
+  alternates: {
+    canonical: 'https://lankapros.com',
+  },
   openGraph: {
     title: 'LankaPros - Sri Lanka\'s Professional Network',
     description: 'Connect with Sri Lankan professionals. Build your career, grow your network.',
@@ -53,6 +56,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${dmSerifDisplay.variable} antialiased bg-background text-foreground`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "LankaPros",
+              "url": "https://lankapros.com",
+              "description": "Sri Lanka's Professional Network. Connect with professionals, build your career, grow your network."
+            })
+          }}
+        />
         <Toaster theme="dark" position="bottom-right" />
         {children}
         <CookieConsent />
