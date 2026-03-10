@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
-import { UserCheck, UserPlus, X, Loader2 } from 'lucide-react'
-import type { Profile } from '@/types/database'
+import { UserCheck, UserPlus, X, Loader2, MessageCircle, Users, Sparkles } from 'lucide-react'
+import type { Profile, Industry } from '@/types/database'
 
 type ConnectionWithProfile = {
   id: number
@@ -17,12 +18,17 @@ type ConnectionWithProfile = {
   profile: Profile
 }
 
+type ProfileWithIndustry = Profile & { industry?: Industry | null }
+
 export default function ConnectionsPage() {
+  const router = useRouter()
   const [pending, setPending] = useState<ConnectionWithProfile[]>([])
   const [connections, setConnections] = useState<ConnectionWithProfile[]>([])
-  const [suggestions, setSuggestions] = useState<Profile[]>([])
+  const [suggestions, setSuggestions] = useState<ProfileWithIndustry[]>([])
+  const [myIndustry, setMyIndustry] = useState<Industry | null>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState('')
+  const [connectingIds, setConnectingIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     async function load() {
@@ -55,36 +61,46 @@ export default function ConnectionsPage() {
         .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
         .eq('status', 'accepted')
 
-      if (acceptedData) {
+      if (acceptedData && acceptedData.length > 0) {
         const otherIds = acceptedData.map(c =>
           c.requester_id === user.id ? c.addressee_id : c.requester_id
         )
 
-        if (otherIds.length > 0) {
-          const { data: profiles } = await supabase
-            .from('profiles')
-            .select('*')
-            .in('id', otherIds)
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', otherIds)
 
-          if (profiles) {
-            setConnections(acceptedData.map(c => {
-              const otherId = c.requester_id === user.id ? c.addressee_id : c.requester_id
-              return {
-                ...c,
-                profile: profiles.find(p => p.id === otherId) as Profile,
-              }
-            }).filter(c => c.profile))
-          }
+        if (profiles) {
+          setConnections(acceptedData.map(c => {
+            const otherId = c.requester_id === user.id ? c.addressee_id : c.requester_id
+            return {
+              ...c,
+              profile: profiles.find(p => p.id === otherId) as Profile,
+            }
+          }).filter(c => c.profile))
         }
       }
 
-      // Suggestions: same industry, not connected
+      // My profile + industry
       const { data: myProfile } = await supabase
         .from('profiles')
         .select('industry_id')
         .eq('id', user.id)
         .single()
 
+      let industry: Industry | null = null
+      if (myProfile?.industry_id) {
+        const { data: ind } = await supabase
+          .from('industries')
+          .select('*')
+          .eq('id', myProfile.industry_id)
+          .single()
+        industry = ind
+        setMyIndustry(ind)
+      }
+
+      // Suggestions: same industry, not connected
       if (myProfile?.industry_id) {
         const connectedIds = [
           user.id,
@@ -99,9 +115,11 @@ export default function ConnectionsPage() {
           .select('*')
           .eq('industry_id', myProfile.industry_id)
           .not('id', 'in', `(${connectedIds.join(',')})`)
-          .limit(10)
+          .limit(8)
 
-        if (suggestionsData) setSuggestions(suggestionsData)
+        if (suggestionsData) {
+          setSuggestions(suggestionsData.map(p => ({ ...p, industry })))
+        }
       }
 
       setLoading(false)
@@ -133,6 +151,7 @@ export default function ConnectionsPage() {
   }
 
   async function handleConnect(profileId: string) {
+    setConnectingIds(prev => new Set(prev).add(profileId))
     const supabase = createClient()
     await supabase.from('connections').insert({
       requester_id: userId,
@@ -145,6 +164,38 @@ export default function ConnectionsPage() {
       message: 'sent you a connection request',
     })
     setSuggestions(prev => prev.filter(p => p.id !== profileId))
+    setConnectingIds(prev => {
+      const next = new Set(prev)
+      next.delete(profileId)
+      return next
+    })
+  }
+
+  async function handleMessage(profile: Profile) {
+    const supabase = createClient()
+    // Find or create conversation
+    const { data: existing } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(
+        `and(participant_1.eq.${userId},participant_2.eq.${profile.id}),and(participant_1.eq.${profile.id},participant_2.eq.${userId})`
+      )
+      .single()
+
+    if (existing) {
+      router.push(`/messages/${existing.id}`)
+      return
+    }
+
+    const { data: newConvo } = await supabase
+      .from('conversations')
+      .insert({ participant_1: userId, participant_2: profile.id })
+      .select('id')
+      .single()
+
+    if (newConvo) {
+      router.push(`/messages/${newConvo.id}`)
+    }
   }
 
   if (loading) {
@@ -156,85 +207,157 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-8">
+
       {/* Pending requests */}
       {pending.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-3">Pending Requests ({pending.length})</h2>
+        <section>
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-accent text-black text-xs font-bold">
+              {pending.length}
+            </span>
+            Pending Requests
+          </h2>
           <div className="space-y-2">
             {pending.map(conn => (
               <Card key={conn.id} className="flex items-center gap-3">
-                <Link href={`/${conn.profile.username || conn.profile.id}`}>
+                <Link href={`/${conn.profile.username || conn.profile.id}`} className="shrink-0">
                   <Avatar src={conn.profile.avatar_url} name={conn.profile.full_name} />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/${conn.profile.username || conn.profile.id}`} className="font-medium hover:text-accent">
+                  <Link
+                    href={`/${conn.profile.username || conn.profile.id}`}
+                    className="font-medium hover:text-accent transition-colors block"
+                  >
                     {conn.profile.full_name || 'Anonymous'}
                   </Link>
-                  {conn.profile.headline && <p className="text-xs text-muted truncate">{conn.profile.headline}</p>}
+                  {conn.profile.headline && (
+                    <p className="text-xs text-muted truncate">{conn.profile.headline}</p>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleAccept(conn.id, conn.requester_id)}>
+                <div className="flex gap-2 shrink-0">
+                  <Button
+                    size="sm"
+                    onClick={() => handleAccept(conn.id, conn.requester_id)}
+                    className="gap-1.5"
+                  >
                     <UserCheck className="h-4 w-4" />
+                    Accept
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleReject(conn.id)}>
+                  <Button size="sm" variant="ghost" onClick={() => handleReject(conn.id)} title="Decline">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
               </Card>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Suggestions */}
-      {suggestions.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-3">People You May Know</h2>
-          <div className="grid sm:grid-cols-2 gap-2">
+      {/* People You May Know */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-4 w-4 text-accent" />
+          <h2 className="text-lg font-semibold">People You May Know</h2>
+          {myIndustry && (
+            <span className="ml-auto text-xs text-muted bg-card border border-border px-2 py-0.5 rounded-full">
+              {myIndustry.icon ?? ''} {myIndustry.name}
+            </span>
+          )}
+        </div>
+
+        {suggestions.length === 0 ? (
+          <Card className="text-center py-10 text-muted">
+            <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <p className="font-medium mb-1">You&apos;ve connected with everyone in your industry!</p>
+            <p className="text-sm">Check back later as more professionals join LankaPros.</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {suggestions.map(profile => (
-              <Card key={profile.id} className="flex items-center gap-3">
-                <Link href={`/${profile.username || profile.id}`}>
-                  <Avatar src={profile.avatar_url} name={profile.full_name} />
+              <Card key={profile.id} className="flex flex-col items-center text-center gap-3 p-4">
+                <Link href={`/${profile.username || profile.id}`} className="shrink-0">
+                  <Avatar src={profile.avatar_url} name={profile.full_name} size="lg" />
                 </Link>
-                <div className="flex-1 min-w-0">
-                  <Link href={`/${profile.username || profile.id}`} className="font-medium hover:text-accent text-sm">
+                <div className="min-w-0 w-full">
+                  <Link
+                    href={`/${profile.username || profile.id}`}
+                    className="font-medium hover:text-accent transition-colors text-sm block truncate"
+                  >
                     {profile.full_name || 'Anonymous'}
                   </Link>
-                  {profile.headline && <p className="text-xs text-muted truncate">{profile.headline}</p>}
+                  {profile.headline && (
+                    <p className="text-xs text-muted line-clamp-2 mt-0.5">{profile.headline}</p>
+                  )}
+                  {profile.industry && (
+                    <span className="inline-block mt-1.5 text-[10px] bg-accent/10 text-accent px-2 py-0.5 rounded-full font-medium">
+                      {profile.industry.icon ?? ''} {profile.industry.name}
+                    </span>
+                  )}
                 </div>
-                <Button size="sm" variant="secondary" onClick={() => handleConnect(profile.id)}>
-                  <UserPlus className="h-4 w-4" />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleConnect(profile.id)}
+                  loading={connectingIds.has(profile.id)}
+                  className="w-full gap-1.5"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Connect
                 </Button>
               </Card>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </section>
 
-      {/* My connections */}
-      <div>
-        <h2 className="text-lg font-semibold mb-3">My Connections ({connections.length})</h2>
+      {/* My Connections */}
+      <section>
+        <h2 className="text-lg font-semibold mb-3">
+          My Connections
+          {connections.length > 0 && (
+            <span className="ml-2 text-sm font-normal text-muted">({connections.length})</span>
+          )}
+        </h2>
+
         {connections.length === 0 ? (
-          <p className="text-muted text-center py-8">No connections yet. Start connecting!</p>
+          <Card className="text-center py-10 text-muted">
+            <Users className="h-10 w-10 mx-auto mb-3 opacity-40" />
+            <p className="font-medium mb-1">No connections yet</p>
+            <p className="text-sm">Start connecting with professionals in your industry above!</p>
+          </Card>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {connections.map(conn => (
               <Card key={conn.id} hover className="flex items-center gap-3">
-                <Link href={`/${conn.profile.username || conn.profile.id}`}>
+                <Link href={`/${conn.profile.username || conn.profile.id}`} className="shrink-0">
                   <Avatar src={conn.profile.avatar_url} name={conn.profile.full_name} />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link href={`/${conn.profile.username || conn.profile.id}`} className="font-medium hover:text-accent text-sm">
+                  <Link
+                    href={`/${conn.profile.username || conn.profile.id}`}
+                    className="font-medium hover:text-accent text-sm transition-colors block truncate"
+                  >
                     {conn.profile.full_name || 'Anonymous'}
                   </Link>
-                  {conn.profile.headline && <p className="text-xs text-muted truncate">{conn.profile.headline}</p>}
+                  {conn.profile.headline && (
+                    <p className="text-xs text-muted truncate">{conn.profile.headline}</p>
+                  )}
                 </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleMessage(conn.profile)}
+                  title="Send message"
+                  className="shrink-0"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </Button>
               </Card>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-import { Home, Users, MessageCircle, Users2, Bell, Search, LogOut, Menu, X, TrendingUp, Settings } from 'lucide-react'
+import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const navItems = [
@@ -18,13 +18,20 @@ const navItems = [
   { label: 'Economy', href: '/economy', icon: TrendingUp },
 ]
 
+// Only the 4 most important links in the mobile bottom bar
+const mobileNavItems = [
+  { label: 'Feed', href: '/feed', icon: Home },
+  { label: 'Connect', href: '/connections', icon: Users },
+  { label: 'Messages', href: '/messages', icon: MessageCircle },
+  { label: 'Alerts', href: '/notifications', icon: Bell },
+]
+
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -111,149 +118,133 @@ export default function Navbar() {
     return 0
   }
 
-  return (
-    <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/feed" className="flex items-center gap-2 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-            <span className="text-black font-bold text-sm">LP</span>
-          </div>
-          <span className="font-bold text-lg hidden sm:block">Lanka<span className="text-accent">Pros</span></span>
-        </Link>
+  const profileHref = profile?.username ? `/${profile.username}` : '/profile/edit'
 
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1">
-          {navItems.map(item => {
+  return (
+    <>
+      {/* Top navbar — always visible */}
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          {/* Logo */}
+          <Link href="/feed" className="flex items-center gap-2 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
+              <span className="text-black font-bold text-sm">LP</span>
+            </div>
+            <span className="font-bold text-lg hidden sm:block">Lanka<span className="text-accent">Pros</span></span>
+          </Link>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-1">
+            {navItems.map(item => {
+              const Icon = item.icon
+              const badge = getBadge(item.href)
+              const isActive = pathname.startsWith(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'relative flex flex-col items-center px-3 py-1.5 rounded-lg text-xs transition-colors',
+                    isActive
+                      ? 'text-accent bg-accent/10'
+                      : 'text-muted hover:text-foreground hover:bg-card'
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="mt-0.5">{item.label}</span>
+                  {/* Active underline indicator */}
+                  {isActive && (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-accent" />
+                  )}
+                  {badge > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
+                      {badge > 99 ? '99+' : badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+            {/* Avatar — shown on both mobile and desktop when logged in */}
+            {profile && (
+              <Link href={profileHref} className="flex items-center" title={profile.full_name || 'Profile'}>
+                <Avatar src={profile.avatar_url} name={profile.full_name} size="sm" className="w-7 h-7" />
+              </Link>
+            )}
+
+            <Link
+              href="/settings"
+              className={cn(
+                'hidden md:flex p-2 rounded-lg transition-colors',
+                pathname.startsWith('/settings')
+                  ? 'text-accent bg-accent/10'
+                  : 'text-muted hover:text-foreground hover:bg-card'
+              )}
+              title="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
+
+            <button
+              onClick={handleSignOut}
+              className="hidden md:flex p-2 rounded-lg text-muted hover:text-red-400 hover:bg-card transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile bottom nav — only on small screens */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border">
+        <div className="flex items-center justify-around h-16 px-2">
+          {mobileNavItems.map(item => {
             const Icon = item.icon
             const badge = getBadge(item.href)
+            const isActive = pathname.startsWith(item.href)
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'relative flex flex-col items-center px-3 py-1.5 rounded-lg text-xs transition-colors',
-                  pathname.startsWith(item.href)
-                    ? 'text-accent bg-accent/10'
-                    : 'text-muted hover:text-foreground hover:bg-card'
+                  'relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors min-w-0',
+                  isActive ? 'text-accent' : 'text-muted'
                 )}
               >
-                <Icon className="h-5 w-5" />
-                <span className="mt-0.5">{item.label}</span>
+                <Icon className={cn('h-6 w-6', isActive && 'stroke-[2.5]')} />
+                <span className="text-[10px] font-medium">{item.label}</span>
                 {badge > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-danger text-white text-[10px] flex items-center justify-center">
+                  <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">
                     {badge > 99 ? '99+' : badge}
                   </span>
                 )}
               </Link>
             )
           })}
-        </div>
 
-        {/* Right side */}
-        <div className="flex items-center gap-2">
+          {/* Profile tab */}
           <Link
-            href="/search"
-            className="p-2 rounded-lg text-muted hover:text-foreground hover:bg-card transition-colors"
-          >
-            <Search className="h-5 w-5" />
-          </Link>
-
-          <Link href={profile?.username ? `/${profile.username}` : '/profile/edit'} className="hidden md:block">
-            <Avatar src={profile?.avatar_url} name={profile?.full_name} size="sm" />
-          </Link>
-
-          <Link
-            href="/settings"
+            href={profileHref}
             className={cn(
-              'hidden md:flex p-2 rounded-lg transition-colors',
-              pathname.startsWith('/settings')
-                ? 'text-accent bg-accent/10'
-                : 'text-muted hover:text-foreground hover:bg-card'
+              'relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-colors min-w-0',
+              (pathname.startsWith('/profile') || (profile?.username && pathname === `/${profile.username}`))
+                ? 'text-accent'
+                : 'text-muted'
             )}
-            title="Settings"
           >
-            <Settings className="h-5 w-5" />
+            {profile ? (
+              <Avatar src={profile.avatar_url} name={profile.full_name} size="sm" className="w-6 h-6" />
+            ) : (
+              <User className="h-6 w-6" />
+            )}
+            <span className="text-[10px] font-medium">Profile</span>
           </Link>
-
-          <button
-            onClick={handleSignOut}
-            className="hidden md:flex p-2 rounded-lg text-muted hover:text-danger hover:bg-card transition-colors"
-            title="Sign out"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
-
-          {/* Mobile menu toggle */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-lg text-muted hover:text-foreground hover:bg-card"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
         </div>
-      </div>
-
-      {/* Mobile nav */}
-      {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-background animate-fade-in">
-          <div className="p-2 space-y-1">
-            {navItems.map(item => {
-              const Icon = item.icon
-              const badge = getBadge(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                    pathname.startsWith(item.href)
-                      ? 'text-accent bg-accent/10'
-                      : 'text-muted hover:text-foreground hover:bg-card'
-                  )}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                  {badge > 0 && (
-                    <span className="ml-auto h-5 min-w-5 px-1.5 rounded-full bg-danger text-white text-xs flex items-center justify-center">
-                      {badge}
-                    </span>
-                  )}
-                </Link>
-              )
-            })}
-            <Link
-              href={profile?.username ? `/${profile.username}` : '/profile/edit'}
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted hover:text-foreground hover:bg-card"
-            >
-              <Avatar src={profile?.avatar_url} name={profile?.full_name} size="sm" />
-              <span>{profile?.full_name || 'Profile'}</span>
-            </Link>
-            <Link
-              href="/settings"
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
-                pathname.startsWith('/settings')
-                  ? 'text-accent bg-accent/10'
-                  : 'text-muted hover:text-foreground hover:bg-card'
-              )}
-            >
-              <Settings className="h-5 w-5" />
-              <span>Settings</span>
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted hover:text-danger hover:bg-card w-full"
-            >
-              <LogOut className="h-5 w-5" />
-              <span>Sign out</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </nav>
+      </nav>
+    </>
   )
 }
