@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -9,34 +9,424 @@ import Input from '@/components/ui/Input'
 import Card from '@/components/ui/Card'
 import ThemeCustomizer from '@/components/profile/ThemeCustomizer'
 import { INDUSTRIES, THEME_PATTERNS } from '@/lib/constants'
-import { Plus, Trash2, Save, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, ChevronRight, ChevronLeft, Sparkles } from 'lucide-react'
 import type { Profile, Experience, Education } from '@/types/database'
 
-export default function EditProfilePage() {
+// ---------------------------------------------------------------------------
+// Onboarding wizard (shown for new users who have no username yet)
+// ---------------------------------------------------------------------------
+
+interface WizardState {
+  fullName: string
+  username: string
+  headline: string
+  industryId: string
+  location: string
+  bio: string
+  skills: string
+}
+
+interface WizardErrors {
+  fullName?: string
+  username?: string
+  headline?: string
+  skills?: string
+}
+
+function OnboardingWizard({
+  initialName,
+  userId,
+  onComplete,
+}: {
+  initialName: string
+  userId: string
+  onComplete: () => void
+}) {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
+  const [step, setStep] = useState(1)
   const [saving, setSaving] = useState(false)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [experiences, setExperiences] = useState<Experience[]>([])
-  const [educationList, setEducationList] = useState<Education[]>([])
-  const [skillsText, setSkillsText] = useState('')
+  const [checkingUsername, setCheckingUsername] = useState(false)
+  const [errors, setErrors] = useState<WizardErrors>({})
+
+  const [form, setForm] = useState<WizardState>({
+    fullName: initialName,
+    username: '',
+    headline: '',
+    industryId: '',
+    location: '',
+    bio: '',
+    skills: '',
+  })
+
+  function update(field: keyof WizardState, value: string) {
+    setForm(prev => ({ ...prev, [field]: value }))
+    setErrors(prev => ({ ...prev, [field]: undefined }))
+  }
+
+  async function checkUsernameUnique(username: string): Promise<boolean> {
+    if (!username || username.length < 3) return false
+    const supabase = createClient()
+    const { count } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('username', username)
+      .neq('id', userId)
+    return (count ?? 0) === 0
+  }
+
+  async function handleUsernameBlur() {
+    const username = form.username.trim()
+    if (!username) return
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      setErrors(prev => ({ ...prev, username: 'Only letters, numbers, hyphens and underscores' }))
+      return
+    }
+    if (username.length < 3) {
+      setErrors(prev => ({ ...prev, username: 'At least 3 characters required' }))
+      return
+    }
+    setCheckingUsername(true)
+    const available = await checkUsernameUnique(username)
+    setCheckingUsername(false)
+    if (!available) {
+      setErrors(prev => ({ ...prev, username: 'Username already taken — try another' }))
+    }
+  }
+
+  function validateStep1(): boolean {
+    const next: WizardErrors = {}
+    if (!form.fullName.trim() || form.fullName.trim().length < 2) {
+      next.fullName = 'Full name must be at least 2 characters'
+    }
+    if (!form.username.trim() || form.username.trim().length < 3) {
+      next.username = 'Username must be at least 3 characters'
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(form.username.trim())) {
+      next.username = 'Only letters, numbers, hyphens and underscores'
+    }
+    if (errors.username) {
+      next.username = errors.username
+    }
+    setErrors(next)
+    return Object.keys(next).length === 0
+  }
+
+  async function saveStep1AndNext() {
+    if (!validateStep1()) return
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      // Re-check uniqueness at save time
+      const available = await checkUsernameUnique(form.username.trim())
+      if (!available) {
+        setErrors(prev => ({ ...prev, username: 'Username already taken — try another' }))
+        return
+      }
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: form.fullName.trim(),
+          username: form.username.trim().toLowerCase(),
+          headline: form.headline.trim() || null,
+        })
+        .eq('id', userId)
+      if (error) {
+        toast.error(`Save failed: ${error.message}`)
+        return
+      }
+      setStep(2)
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function saveStep2AndNext() {
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          industry_id: form.industryId ? Number(form.industryId) : null,
+          location: form.location.trim() || null,
+          bio: form.bio.trim() || null,
+        })
+        .eq('id', userId)
+      if (error) {
+        toast.error(`Save failed: ${error.message}`)
+        return
+      }
+      setStep(3)
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleFinish() {
+    const skillNames = form.skills
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    if (skillNames.length < 3) {
+      setErrors(prev => ({ ...prev, skills: 'Add at least 3 skills to help others find you' }))
+      return
+    }
+
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      await supabase.from('skills').delete().eq('user_id', userId)
+      const { error } = await supabase
+        .from('skills')
+        .insert(skillNames.map(name => ({ user_id: userId, name })))
+      if (error) {
+        toast.error(`Save failed: ${error.message}`)
+        return
+      }
+      toast.success('Welcome to LankaPros!')
+      router.push('/feed')
+    } catch {
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const totalSteps = 3
+  const progressPct = Math.round((step / totalSteps) * 100)
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-lg space-y-6">
+
+        {/* Header */}
+        <div className="text-center space-y-1">
+          <div className="flex items-center justify-center gap-2 text-accent mb-2">
+            <Sparkles className="h-6 w-6" />
+            <span className="text-sm font-semibold uppercase tracking-widest">Getting started</span>
+          </div>
+          <h1 className="text-3xl font-bold text-foreground">
+            {step === 1 && 'Ayubowan! 🌟 Welcome to LankaPros'}
+            {step === 2 && 'Tell us about yourself'}
+            {step === 3 && 'Showcase your skills'}
+          </h1>
+          <p className="text-muted text-sm">
+            {step === 1 && "Let's set up your professional identity. This takes under 2 minutes."}
+            {step === 2 && 'Help the right people find you on LankaPros.'}
+            {step === 3 && 'Add at least 3 skills to help others discover your profile.'}
+          </p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs text-muted">
+            <span>Step {step} of {totalSteps}</span>
+            <span>{progressPct}% complete</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-card border border-border overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progressPct}%`, backgroundColor: '#D4A843' }}
+            />
+          </div>
+          {/* Dot indicators */}
+          <div className="flex justify-center gap-2 pt-1">
+            {[1, 2, 3].map(s => (
+              <div
+                key={s}
+                className="h-2 w-2 rounded-full transition-all duration-300"
+                style={{
+                  backgroundColor: s <= step ? '#D4A843' : undefined,
+                  opacity: s <= step ? 1 : 0.3,
+                }}
+                aria-hidden
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Step 1 — Welcome / Identity */}
+        {step === 1 && (
+          <Card className="space-y-5 p-6">
+            <Input
+              id="wiz-fullname"
+              label="Full name"
+              value={form.fullName}
+              onChange={e => update('fullName', e.target.value)}
+              error={errors.fullName}
+              placeholder="e.g. Nimal Perera"
+              autoFocus
+            />
+            <div className="space-y-1">
+              <Input
+                id="wiz-username"
+                label="Username"
+                value={form.username}
+                onChange={e =>
+                  update('username', e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))
+                }
+                onBlur={handleUsernameBlur}
+                error={errors.username}
+                placeholder="e.g. nimal_perera"
+              />
+              {checkingUsername && (
+                <p className="text-xs text-muted flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Checking availability…
+                </p>
+              )}
+              {!errors.username && !checkingUsername && form.username.length >= 3 && (
+                <p className="text-xs text-green-500">Username looks good!</p>
+              )}
+            </div>
+            <Input
+              id="wiz-headline"
+              label="Headline (optional)"
+              value={form.headline}
+              onChange={e => update('headline', e.target.value)}
+              placeholder="e.g. Senior Software Engineer at WSO2"
+              maxLength={200}
+            />
+            <div className="flex justify-end pt-2">
+              <Button onClick={saveStep1AndNext} loading={saving} size="lg">
+                Next <ChevronRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Step 2 — About you */}
+        {step === 2 && (
+          <Card className="space-y-5 p-6">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-muted" htmlFor="wiz-industry">
+                Industry
+              </label>
+              <select
+                id="wiz-industry"
+                value={form.industryId}
+                onChange={e => update('industryId', e.target.value)}
+                className="w-full rounded-lg bg-card border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+              >
+                <option value="">Select your industry</option>
+                {INDUSTRIES.map((ind, i) => (
+                  <option key={ind.slug} value={i + 1}>
+                    {ind.icon} {ind.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Input
+              id="wiz-location"
+              label="Location"
+              value={form.location}
+              onChange={e => update('location', e.target.value)}
+              placeholder="e.g. Colombo, Sri Lanka"
+            />
+
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-muted" htmlFor="wiz-bio">
+                Bio (optional)
+              </label>
+              <textarea
+                id="wiz-bio"
+                value={form.bio}
+                onChange={e => update('bio', e.target.value)}
+                placeholder="Tell the LankaPros community a bit about yourself…"
+                maxLength={2000}
+                className="w-full rounded-lg bg-card border border-border px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent min-h-[100px] resize-y"
+              />
+            </div>
+
+            <div className="flex justify-between pt-2">
+              <Button variant="secondary" onClick={() => setStep(1)} size="lg">
+                <ChevronLeft className="mr-1.5 h-4 w-4" /> Back
+              </Button>
+              <Button onClick={saveStep2AndNext} loading={saving} size="lg">
+                Next <ChevronRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Step 3 — Skills */}
+        {step === 3 && (
+          <Card className="space-y-5 p-6">
+            <p className="text-sm text-muted">
+              Add your professional skills separated by commas. The more specific, the better.
+            </p>
+            <Input
+              id="wiz-skills"
+              label="Your skills"
+              value={form.skills}
+              onChange={e => {
+                update('skills', e.target.value)
+              }}
+              error={errors.skills}
+              placeholder="JavaScript, React, Project Management, …"
+            />
+            <p className="text-xs text-muted">
+              {form.skills.split(',').filter(s => s.trim()).length} skill
+              {form.skills.split(',').filter(s => s.trim()).length !== 1 ? 's' : ''} added
+              {form.skills.split(',').filter(s => s.trim()).length < 3 && (
+                <span className="text-accent"> — add at least 3</span>
+              )}
+            </p>
+
+            <div className="flex justify-between pt-2">
+              <Button variant="secondary" onClick={() => setStep(2)} size="lg">
+                <ChevronLeft className="mr-1.5 h-4 w-4" /> Back
+              </Button>
+              <Button onClick={handleFinish} loading={saving} size="lg">
+                Finish setup
+              </Button>
+            </div>
+          </Card>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Full edit form (existing users — unchanged behaviour)
+// ---------------------------------------------------------------------------
+
+function ExistingUserEditForm({
+  profile: initialProfile,
+  experiences: initialExperiences,
+  educationList: initialEducationList,
+  skillsText: initialSkillsText,
+}: {
+  profile: Profile
+  experiences: Experience[]
+  educationList: Education[]
+  skillsText: string
+}) {
+  const router = useRouter()
+  const [saving, setSaving] = useState(false)
+  const [profile, setProfile] = useState<Profile>(initialProfile)
+  const [experiences, setExperiences] = useState<Experience[]>(initialExperiences)
+  const [educationList, setEducationList] = useState<Education[]>(initialEducationList)
+  const [skillsText, setSkillsText] = useState(initialSkillsText)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
-  const [message, setMessage] = useState('')
 
   const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
   function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) { setAvatarFile(null); return }
-
     if (!allowedImageTypes.includes(file.type)) {
       alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
       e.target.value = ''
       return
     }
-    const maxSize = 2 * 1024 * 1024 // 2MB
-    if (file.size > maxSize) {
+    if (file.size > 2 * 1024 * 1024) {
       alert('File too large. Maximum size for avatars is 2MB.')
       e.target.value = ''
       return
@@ -47,14 +437,12 @@ export default function EditProfilePage() {
   function handleCoverSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) { setCoverFile(null); return }
-
     if (!allowedImageTypes.includes(file.type)) {
       alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
       e.target.value = ''
       return
     }
-    const maxSize = 5 * 1024 * 1024 // 5MB
-    if (file.size > maxSize) {
+    if (file.size > 5 * 1024 * 1024) {
       alert('File too large. Maximum size for cover photos is 5MB.')
       e.target.value = ''
       return
@@ -62,43 +450,12 @@ export default function EditProfilePage() {
     setCoverFile(file)
   }
 
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-
-      const [
-        { data: p },
-        { data: exp },
-        { data: edu },
-        { data: skills },
-      ] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('experiences').select('*').eq('user_id', user.id).order('start_date', { ascending: false }),
-        supabase.from('education').select('*').eq('user_id', user.id).order('start_year', { ascending: false }),
-        supabase.from('skills').select('*').eq('user_id', user.id),
-      ])
-
-      if (p) setProfile(p)
-      if (exp) setExperiences(exp)
-      if (edu) setEducationList(edu)
-      if (skills) setSkillsText(skills.map(s => s.name).join(', '))
-      setLoading(false)
-    }
-    load()
-  }, [router])
-
   function updateProfile(field: keyof Profile, value: string | number | null) {
-    if (!profile) return
-    setProfile({ ...profile, [field]: value } as Profile)
+    setProfile(prev => ({ ...prev, [field]: value } as Profile))
   }
 
   async function handleSave() {
-    if (!profile) return
     setSaving(true)
-    setMessage('')
-
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -107,7 +464,6 @@ export default function EditProfilePage() {
       let avatarUrl = profile.avatar_url
       let coverUrl = profile.cover_url
 
-      // Upload avatar
       if (avatarFile) {
         const ext = avatarFile.name.split('.').pop()
         const path = `${user.id}/avatar.${ext}`
@@ -116,7 +472,6 @@ export default function EditProfilePage() {
         avatarUrl = data.publicUrl
       }
 
-      // Upload cover
       if (coverFile) {
         const ext = coverFile.name.split('.').pop()
         const path = `${user.id}/cover.${ext}`
@@ -125,7 +480,6 @@ export default function EditProfilePage() {
         coverUrl = data.publicUrl
       }
 
-      // Update profile
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -150,30 +504,25 @@ export default function EditProfilePage() {
         return
       }
 
-      // Update skills
       await supabase.from('skills').delete().eq('user_id', user.id)
       const skillNames = skillsText.split(',').map(s => s.trim()).filter(Boolean)
       if (skillNames.length > 0) {
-        await supabase.from('skills').insert(
-          skillNames.map(name => ({ user_id: user.id, name }))
-        )
+        await supabase.from('skills').insert(skillNames.map(name => ({ user_id: user.id, name })))
       }
 
       toast.success('Profile updated!')
       router.refresh()
-    } catch (err) {
+    } catch {
       toast.error('Error saving profile')
     } finally {
       setSaving(false)
     }
   }
 
-  // Experience CRUD
   async function addExperience() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     const { data } = await supabase
       .from('experiences')
       .insert({
@@ -185,28 +534,25 @@ export default function EditProfilePage() {
       })
       .select()
       .single()
-
-    if (data) setExperiences([data, ...experiences])
+    if (data) setExperiences(prev => [data, ...prev])
   }
 
   async function updateExperience(id: number, field: string, value: string | boolean | null) {
     const supabase = createClient()
     await supabase.from('experiences').update({ [field]: value }).eq('id', id)
-    setExperiences(experiences.map(e => e.id === id ? { ...e, [field]: value } : e))
+    setExperiences(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e))
   }
 
   async function deleteExperience(id: number) {
     const supabase = createClient()
     await supabase.from('experiences').delete().eq('id', id)
-    setExperiences(experiences.filter(e => e.id !== id))
+    setExperiences(prev => prev.filter(e => e.id !== id))
   }
 
-  // Education CRUD
   async function addEducation() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-
     const { data } = await supabase
       .from('education')
       .insert({
@@ -216,31 +562,20 @@ export default function EditProfilePage() {
       })
       .select()
       .single()
-
-    if (data) setEducationList([data, ...educationList])
+    if (data) setEducationList(prev => [data, ...prev])
   }
 
   async function updateEducation(id: number, field: string, value: string | number | null) {
     const supabase = createClient()
     await supabase.from('education').update({ [field]: value }).eq('id', id)
-    setEducationList(educationList.map(e => e.id === id ? { ...e, [field]: value } : e))
+    setEducationList(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e))
   }
 
   async function deleteEducation(id: number) {
     const supabase = createClient()
     await supabase.from('education').delete().eq('id', id)
-    setEducationList(educationList.filter(e => e.id !== id))
+    setEducationList(prev => prev.filter(e => e.id !== id))
   }
-
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-accent" />
-      </div>
-    )
-  }
-
-  if (!profile) return null
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -250,10 +585,6 @@ export default function EditProfilePage() {
           <Save className="h-4 w-4 mr-1.5" /> Save
         </Button>
       </div>
-
-      {message && (
-        <p className={`text-sm ${message.startsWith('Error') ? 'text-danger' : 'text-success'}`}>{message}</p>
-      )}
 
       {/* Basic Info */}
       <Card>
@@ -273,7 +604,6 @@ export default function EditProfilePage() {
           </div>
           <Input id="location" label="Location" value={profile.location || ''} onChange={e => updateProfile('location', e.target.value)} placeholder="e.g. Colombo, Sri Lanka" />
           <Input id="website" label="Website" value={profile.website || ''} onChange={e => updateProfile('website', e.target.value)} placeholder="https://..." />
-
           <div className="space-y-1">
             <label className="block text-sm font-medium text-muted">Industry</label>
             <select
@@ -395,5 +725,125 @@ export default function EditProfilePage() {
         </Button>
       </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Page shell — loads data, decides which view to render
+// ---------------------------------------------------------------------------
+
+export default function EditProfilePage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [creatingProfile, setCreatingProfile] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [experiences, setExperiences] = useState<Experience[]>([])
+  const [educationList, setEducationList] = useState<Education[]>([])
+  const [skillsText, setSkillsText] = useState('')
+  const [userId, setUserId] = useState<string | null>(null)
+  const [userName, setUserName] = useState('')
+
+  const loadData = useCallback(async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
+
+    setUserId(user.id)
+    // Prefer display_name → full_name → email prefix as the default full name
+    const googleName =
+      (user.user_metadata?.full_name as string | undefined) ||
+      (user.user_metadata?.name as string | undefined) ||
+      user.email?.split('@')[0] ||
+      ''
+    setUserName(googleName)
+
+    const [
+      { data: p },
+      { data: exp },
+      { data: edu },
+      { data: skills },
+    ] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', user.id).single(),
+      supabase.from('experiences').select('*').eq('user_id', user.id).order('start_date', { ascending: false }),
+      supabase.from('education').select('*').eq('user_id', user.id).order('start_year', { ascending: false }),
+      supabase.from('skills').select('*').eq('user_id', user.id),
+    ])
+
+    if (p) {
+      setProfile(p)
+    } else {
+      // Profile row missing (e.g. Google OAuth new user with no trigger) — upsert a blank row
+      setCreatingProfile(true)
+      const { data: upserted, error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(
+          {
+            id: user.id,
+            full_name: googleName || null,
+          },
+          { onConflict: 'id' }
+        )
+        .select()
+        .single()
+      setCreatingProfile(false)
+
+      if (upsertError) {
+        toast.error('Could not create your profile. Please try refreshing the page.')
+      } else if (upserted) {
+        setProfile(upserted)
+      }
+    }
+
+    if (exp) setExperiences(exp)
+    if (edu) setEducationList(edu)
+    if (skills) setSkillsText(skills.map((s: { name: string }) => s.name).join(', '))
+    setLoading(false)
+  }, [router])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  if (loading || creatingProfile) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <p className="text-sm text-muted">
+          {creatingProfile ? 'Setting up your profile…' : 'Loading…'}
+        </p>
+      </div>
+    )
+  }
+
+  // Profile still null after upsert attempt — show a friendly error instead of blank page
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center px-4">
+        <p className="text-foreground font-semibold">We could not load your profile.</p>
+        <p className="text-sm text-muted">Please refresh the page or sign out and back in.</p>
+        <Button onClick={() => { setLoading(true); loadData() }}>Try again</Button>
+      </div>
+    )
+  }
+
+  // New user — no username set yet → show onboarding wizard
+  if (!profile.username) {
+    return (
+      <OnboardingWizard
+        initialName={profile.full_name || userName}
+        userId={profile.id}
+        onComplete={() => router.push('/feed')}
+      />
+    )
+  }
+
+  // Existing user → full edit form
+  return (
+    <ExistingUserEditForm
+      profile={profile}
+      experiences={experiences}
+      educationList={educationList}
+      skillsText={skillsText}
+    />
   )
 }
