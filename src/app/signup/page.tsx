@@ -18,6 +18,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmationSent, setConfirmationSent] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -33,16 +34,19 @@ export default function SignupPage() {
     try {
       const supabase = createClient()
 
-      // Check username availability
-      const { data: existing } = await supabase
+      // Check username availability — maybeSingle() returns null (not an error) when no rows found
+      const { data: existing, error: checkError } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', username)
-        .single()
+        .maybeSingle()
 
+      if (checkError) {
+        setError('Could not verify username availability. Please try again.')
+        return
+      }
       if (existing) {
         setError('Username is already taken')
-        setLoading(false)
         return
       }
 
@@ -50,9 +54,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
-          data: {
-            full_name: fullName,
-          },
+          data: { full_name: fullName },
         },
       })
 
@@ -61,18 +63,28 @@ export default function SignupPage() {
         return
       }
 
-      if (data.user) {
-        // Update profile with username
-        await supabase
-          .from('profiles')
-          .update({ username, full_name: fullName })
-          .eq('id', data.user.id)
-
-        router.push('/profile/edit')
-        router.refresh()
+      if (!data.user) {
+        // Email confirmation required — user created but session not active yet
+        setConfirmationSent(true)
+        return
       }
-    } catch {
-      setError('An unexpected error occurred')
+
+      // Session is active — update profile with username
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ username, full_name: fullName })
+        .eq('id', data.user.id)
+
+      if (profileError) {
+        // Account created but username save failed — let them set it in profile/edit
+        console.error('Profile update error:', profileError)
+      }
+
+      router.push('/profile/edit')
+      router.refresh()
+    } catch (err) {
+      console.error('Signup error:', err)
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -80,12 +92,34 @@ export default function SignupPage() {
 
   async function handleGoogleSignup() {
     const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?redirect=/profile/edit`,
       },
     })
+    if (error) {
+      setError('Could not connect to Google. Please try again or use email.')
+    }
+  }
+
+  if (confirmationSent) {
+    return (
+      <AuthLayout>
+        <Card className="p-6 text-center">
+          <div className="text-4xl mb-4">📬</div>
+          <h2 className="text-xl font-semibold mb-2">Check your email</h2>
+          <p className="text-sm text-muted mb-4">
+            We sent a confirmation link to <span className="text-foreground">{email}</span>.
+            Click it to activate your account.
+          </p>
+          <p className="text-xs text-muted">
+            Already confirmed?{' '}
+            <Link href="/login" className="text-accent hover:underline">Sign in</Link>
+          </p>
+        </Card>
+      </AuthLayout>
+    )
   }
 
   return (

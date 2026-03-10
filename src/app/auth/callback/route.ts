@@ -13,14 +13,19 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Check if user has a username set
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        console.error('Auth callback getUser error:', userError)
+        return NextResponse.redirect(`${origin}/login?error=auth`)
+      }
+
       if (user) {
+        // maybeSingle() returns null data (not an error) when no row exists
         const { data: profile } = await supabase
           .from('profiles')
           .select('username')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (!profile?.username) {
           return NextResponse.redirect(`${origin}/profile/edit`)
@@ -29,6 +34,8 @@ export async function GET(request: Request) {
 
       return NextResponse.redirect(`${origin}${redirect}`)
     }
+
+    console.error('Auth callback exchangeCodeForSession error:', error)
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth`)
