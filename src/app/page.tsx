@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { InteractiveGlobe } from '@/components/ui/interactive-globe'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -15,40 +16,56 @@ export default async function HomePage() {
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="pattern-lotus absolute inset-0 opacity-30" />
-        <div className="relative max-w-5xl mx-auto px-4 py-20 text-center">
-          <div className="inline-flex items-center gap-3 mb-6">
-            <div className="text-2xl tracking-widest font-serif-display text-accent opacity-60">✦ LP ✦</div>
-          </div>
-          <h1 className="font-serif-display text-4xl md:text-6xl font-bold mb-4 animate-lk-fade-up">
-            Lanka<span className="text-accent">Pros</span>
-          </h1>
-          <p className="font-serif-display text-2xl md:text-3xl text-accent/70 italic mb-2">Ayubowan!</p>
-          <p className="text-lg text-muted max-w-xl mx-auto mb-8 animate-lk-fade-up-2">
-            Sri Lanka&apos;s professional network. Connect, collaborate, and grow your career
-            with professionals across the island.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-accent text-black font-semibold hover:bg-accent-hover transition-colors"
-            >
-              Join now — it&apos;s free
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center h-12 px-8 rounded-lg border border-border text-foreground font-semibold hover:bg-card transition-colors"
-            >
-              Sign in
-            </Link>
-          </div>
-          <div className="mt-6">
-            <Link
-              href="/economy"
-              className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-hover transition-colors"
-            >
-              <span>📊</span>
-              <span>Explore Sri Lanka Economy Dashboard →</span>
-            </Link>
+        <div className="relative max-w-5xl mx-auto px-4 py-16">
+          {/* Globe hero layout: text left, globe right on md+ */}
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-4">
+            {/* Left — copy */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-3 mb-6">
+                <div className="text-2xl tracking-widest font-serif-display text-accent opacity-60">✦ LP ✦</div>
+              </div>
+              <h1 className="font-serif-display text-4xl md:text-6xl font-bold mb-4 animate-lk-fade-up">
+                Lanka<span className="text-accent">Pros</span>
+              </h1>
+              <p className="font-serif-display text-2xl md:text-3xl text-accent/70 italic mb-2">Ayubowan!</p>
+              <p className="text-lg text-muted max-w-xl mb-8 animate-lk-fade-up-2">
+                Sri Lanka&apos;s professional network. Connect, collaborate, and grow your career
+                with professionals across the island and the globe.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-accent text-black font-semibold hover:bg-accent-hover transition-colors"
+                >
+                  Join now — it&apos;s free
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center h-12 px-8 rounded-lg border border-border text-foreground font-semibold hover:bg-card transition-colors"
+                >
+                  Sign in
+                </Link>
+              </div>
+              <div className="mt-5">
+                <Link
+                  href="/economy"
+                  className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-hover transition-colors"
+                >
+                  <span>📊</span>
+                  <span>Explore Sri Lanka Economy Dashboard →</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Right — interactive globe */}
+            <div className="flex-1 flex items-center justify-center">
+              <div className="relative">
+                <p className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs text-muted whitespace-nowrap">
+                  Drag to explore · Sri Lanka connected worldwide
+                </p>
+                <InteractiveGlobe size={440} />
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -79,6 +79,47 @@ export default function FeedPage() {
     return () => observerRef.current?.disconnect()
   }, [hasMore, loadingMore, loadPosts])
 
+  // Realtime: prepend new posts from other users as they arrive
+  useEffect(() => {
+    const supabase = createClient()
+    let currentUserId: string | null = null
+    supabase.auth.getUser().then(({ data: { user } }) => { currentUserId = user?.id ?? null })
+
+    const channel = supabase
+      .channel('feed-new-posts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'posts' },
+        async (payload) => {
+          // Skip own posts — handleNewPost covers those
+          if (payload.new?.user_id === currentUserId) return
+
+          // Fetch the new post in FeedPost shape via get_feed
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) return
+          const { data } = await supabase.rpc('get_feed', {
+            p_user_id: user.id,
+            p_page_size: 1,
+            p_page_offset: 0,
+            p_filter_industry: null,
+          })
+          if (data?.[0]) {
+            startTransition(() => {
+              setPosts(prev => {
+                // Avoid duplicates
+                if (prev.some(p => p.id === data[0].id)) return prev
+                return [data[0], ...prev]
+              })
+              offsetRef.current += 1
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
   function handleNewPost(post: FeedPost) {
     setPosts(prev => [post, ...prev])
   }

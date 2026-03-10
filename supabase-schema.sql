@@ -587,3 +587,4 @@ CREATE POLICY "Users can delete own post images" ON storage.objects FOR DELETE U
 -- ============================================================
 ALTER PUBLICATION supabase_realtime ADD TABLE messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
+ALTER PUBLICATION supabase_realtime ADD TABLE posts;
