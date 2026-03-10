@@ -46,15 +46,6 @@ export default async function HomePage() {
                   Sign in
                 </Link>
               </div>
-              <div className="mt-5">
-                <Link
-                  href="/economy"
-                  className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-hover transition-colors"
-                >
-                  <span>📊</span>
-                  <span>Explore Sri Lanka Economy Dashboard →</span>
-                </Link>
-              </div>
             </div>
 
             {/* Right — interactive globe */}
