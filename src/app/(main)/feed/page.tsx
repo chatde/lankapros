@@ -4,6 +4,9 @@ import { useEffect, useState, useCallback, useRef, startTransition } from 'react
 import { createClient } from '@/lib/supabase/client'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard from '@/components/feed/PostCard'
+import WelcomeBanner from '@/components/feed/WelcomeBanner'
+import EmptyFeedState from '@/components/feed/EmptyFeedState'
+import SuggestedConnections from '@/components/feed/SuggestedConnections'
 import { INDUSTRIES } from '@/lib/constants'
 import type { FeedPost } from '@/types/database'
 import { Loader2 } from 'lucide-react'
@@ -17,9 +20,12 @@ export default function FeedPage() {
   const [hasMore, setHasMore] = useState(true)
   const [industryFilter, setIndustryFilter] = useState<number | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [firstName, setFirstName] = useState<string>('')
+  const [isNewUser, setIsNewUser] = useState(false)
   const offsetRef = useRef(0)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
+  const composerRef = useRef<HTMLDivElement>(null)
 
   const loadPosts = useCallback(async (reset = false) => {
     const supabase = createClient()
@@ -31,6 +37,20 @@ export default function FeedPage() {
 
     if (reset) {
       setLoading(true)
+
+      // Fetch profile info for welcome banner
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, connection_count, post_count')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        const first = profile.full_name?.split(' ')[0] ?? 'there'
+        setFirstName(first)
+        // Truly new: no connections AND no posts
+        setIsNewUser(profile.connection_count === 0 && profile.post_count === 0)
+      }
     } else {
       setLoadingMore(true)
     }
@@ -121,6 +141,8 @@ export default function FeedPage() {
   }, [])
 
   function handleNewPost(post: FeedPost) {
+    // When a new user posts, they're no longer a new user
+    setIsNewUser(false)
     setPosts(prev => [post, ...prev])
   }
 
@@ -144,9 +166,24 @@ export default function FeedPage() {
     )
   }
 
+  function focusComposer() {
+    if (composerRef.current) {
+      composerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const textarea = composerRef.current.querySelector('textarea')
+      textarea?.focus()
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <PostComposer onPost={handleNewPost} />
+      {/* Welcome banner — only for truly new users */}
+      {!loading && isNewUser && (
+        <WelcomeBanner firstName={firstName} onWritePost={focusComposer} />
+      )}
+
+      <div ref={composerRef}>
+        <PostComposer onPost={handleNewPost} />
+      </div>
 
       {/* Industry filter */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -180,12 +217,17 @@ export default function FeedPage() {
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
       ) : posts.length === 0 ? (
-        <div className="text-center py-12 text-muted">
-          <p className="text-lg mb-2">No posts yet</p>
-          <p className="text-sm">Connect with others or create the first post!</p>
-        </div>
+        <>
+          <EmptyFeedState />
+          {userId && <SuggestedConnections userId={userId} />}
+        </>
       ) : (
         <>
+          {/* Suggested connections strip when there are fewer than 5 posts */}
+          {posts.length < 5 && userId && (
+            <SuggestedConnections userId={userId} />
+          )}
+
           {posts.map(post => (
             <PostCard
               key={post.id}
