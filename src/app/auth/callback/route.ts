@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const rawRedirect = searchParams.get('redirect') || '/feed'
@@ -9,15 +9,29 @@ export async function GET(request: Request) {
   const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/feed'
 
   if (code) {
-    const supabase = await createClient()
+    const response = NextResponse.redirect(`${origin}${redirect}`)
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
+
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) {
-        console.error('Auth callback getUser error:', userError)
-        return NextResponse.redirect(`${origin}/login?error=auth`)
-      }
+      const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
         // maybeSingle() returns null data (not an error) when no row exists
@@ -28,14 +42,16 @@ export async function GET(request: Request) {
           .maybeSingle()
 
         if (!profile?.username) {
-          return NextResponse.redirect(`${origin}/profile/edit`)
+          const editResponse = NextResponse.redirect(`${origin}/profile/edit`)
+          response.cookies.getAll().forEach(({ name, value, ...options }) =>
+            editResponse.cookies.set(name, value, options)
+          )
+          return editResponse
         }
       }
 
-      return NextResponse.redirect(`${origin}${redirect}`)
+      return response
     }
-
-    console.error('Auth callback exchangeCodeForSession error:', error)
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth`)
