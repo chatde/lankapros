@@ -8,51 +8,72 @@ export async function GET(request: NextRequest) {
   // Prevent open redirect — only allow relative paths on same origin
   const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/feed'
 
-  if (code) {
-    const response = NextResponse.redirect(`${origin}${redirect}`)
+  if (!code) {
+    return NextResponse.redirect(`${origin}/login?error=auth`)
+  }
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              response.cookies.set(name, value, options)
-            )
-          },
+  // Buffer cookies — apply to final response once destination is known
+  const pendingCookies: Array<{ name: string; value: string; options?: Record<string, unknown> }> = []
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
         },
-      }
-    )
+        setAll(cookiesToSet) {
+          pendingCookies.push(...cookiesToSet)
+        },
+      },
+    }
+  )
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+  const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
-      const { data: { user } } = await supabase.auth.getUser()
+  if (sessionError) {
+    return NextResponse.redirect(`${origin}/login?error=auth`)
+  }
 
-      if (user) {
-        // maybeSingle() returns null data (not an error) when no row exists
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', user.id)
-          .maybeSingle()
+  const { data: { user } } = await supabase.auth.getUser()
 
-        if (!profile?.username) {
-          const editResponse = NextResponse.redirect(`${origin}/profile/edit`)
-          response.cookies.getAll().forEach(({ name, value, ...options }) =>
-            editResponse.cookies.set(name, value, options)
-          )
-          return editResponse
-        }
-      }
+  let destination = redirect
 
-      return response
+  if (user) {
+    // Check if profile exists — trigger may have failed on first OAuth
+    let { data: profile } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!profile) {
+      // Trigger failed — create profile directly using the authenticated session
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name ?? null) as string | null,
+        avatar_url: (user.user_metadata?.avatar_url ?? null) as string | null,
+      })
+
+      const { data: retried } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .maybeSingle()
+      profile = retried
+    }
+
+    // New user — no username yet, send to profile setup
+    if (!profile?.username) {
+      destination = '/profile/edit'
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  // Apply all buffered cookies to the final response
+  const finalResponse = NextResponse.redirect(`${origin}${destination}`)
+  for (const { name, value, options } of pendingCookies) {
+    finalResponse.cookies.set(name, value, options ?? {})
+  }
+  return finalResponse
 }
