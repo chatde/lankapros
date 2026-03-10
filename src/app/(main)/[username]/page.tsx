@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProfileView from '@/components/profile/ProfileView'
-import type { Profile, Connection } from '@/types/database'
+import type { Profile, Connection, Post } from '@/types/database'
 
 interface Props {
   params: Promise<{ username: string }>
@@ -42,6 +42,13 @@ export default async function ProfilePage({ params }: Props) {
     .select('*')
     .eq('user_id', profile.id)
 
+  const { data: postsData } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('author_id', profile.id)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
   let industry = null
   if (profile.industry_id) {
     const { data } = await supabase
@@ -80,6 +87,7 @@ export default async function ProfilePage({ params }: Props) {
       industry={industry}
       currentUserId={user?.id || null}
       connectionStatus={connectionStatus}
+      posts={(postsData as Post[]) || []}
     />
   )
 }
