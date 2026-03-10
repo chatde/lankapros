@@ -34,18 +34,18 @@ export default function SignupPage() {
     try {
       const supabase = createClient()
 
-      // Check username availability — maybeSingle() returns null (not an error) when no rows found
-      const { data: existing, error: checkError } = await supabase
+      // Check username availability using count (no maybeSingle quirks)
+      const { count, error: checkError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id', { count: 'exact', head: true })
         .eq('username', username)
-        .maybeSingle()
 
       if (checkError) {
+        console.error('Username check error:', checkError)
         setError('Could not verify username availability. Please try again.')
         return
       }
-      if (existing) {
+      if (count && count > 0) {
         setError('Username is already taken')
         return
       }
