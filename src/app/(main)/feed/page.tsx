@@ -30,7 +30,10 @@ export default function FeedPage() {
   const loadPosts = useCallback(async (reset = false) => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
     setUserId(user.id)
     const offset = reset ? 0 : offsetRef.current
