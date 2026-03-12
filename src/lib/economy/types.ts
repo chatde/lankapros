@@ -81,3 +81,31 @@ export interface OverviewMetrics {
 }
 
 export type Trend = 'up' | 'down' | 'flat'
+
+export interface CryptoPrice {
+  id: string
+  name: string
+  symbol: string
+  icon: string
+  priceLkr: number
+  priceUsd: number
+  change24h: number
+}
+
+export interface CommodityPrice {
+  name: string
+  symbol: string
+  icon: string
+  priceUsd: number
+  priceLkr: number
+  unit: string
+}
+
+export interface CoastalReading {
+  city: string
+  icon: string
+  waveHeight: number
+  seaTemp: number
+  waveDirection: number
+  wavePeriod: number
+}

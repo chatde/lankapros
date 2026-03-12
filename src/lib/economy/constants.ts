@@ -42,10 +42,13 @@ export const ECONOMY_TABS = [
   { label: 'Compare', href: '/economy/compare' },
   { label: 'Overview', href: '/economy' },
   { label: 'Exchange Rates', href: '/economy/exchange-rates' },
+  { label: 'Crypto', href: '/economy/crypto' },
+  { label: 'Commodities', href: '/economy/commodities' },
   { label: 'Stock Market', href: '/economy/stock-market' },
   { label: 'Macro', href: '/economy/macro' },
   { label: 'Social', href: '/economy/social' },
   { label: 'Weather', href: '/economy/weather' },
+  { label: 'Coastal', href: '/economy/coastal' },
   { label: 'People', href: '/economy/people' },
   { label: 'News', href: '/economy/news' },
 ] as const
