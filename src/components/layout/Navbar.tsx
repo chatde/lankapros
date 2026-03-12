@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User } from 'lucide-react'
+import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User, Search } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const navItems = [
@@ -21,7 +21,7 @@ const navItems = [
 // Only the 4 most important links in the mobile bottom bar
 const mobileNavItems = [
   { label: 'Feed', href: '/feed', icon: Home },
-  { label: 'Connect', href: '/connections', icon: Users },
+  { label: 'Search', href: '/search', icon: Search },
   { label: 'Messages', href: '/messages', icon: MessageCircle },
   { label: 'Alerts', href: '/notifications', icon: Bell },
 ]
@@ -174,6 +174,19 @@ export default function Navbar() {
                 <Avatar src={profile.avatar_url} name={profile.full_name} size="sm" className="w-7 h-7" />
               </Link>
             )}
+
+            <Link
+              href="/search"
+              className={cn(
+                'hidden md:flex p-2 rounded-lg transition-colors',
+                pathname.startsWith('/search')
+                  ? 'text-accent bg-accent/10'
+                  : 'text-muted hover:text-foreground hover:bg-card'
+              )}
+              title="Search"
+            >
+              <Search className="h-5 w-5" />
+            </Link>
 
             <Link
               href="/settings"

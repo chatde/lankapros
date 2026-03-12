@@ -431,7 +431,7 @@ export interface Database {
     Views: Record<string, never>
     Functions: {
       get_feed: {
-        Args: { user_id: string; page_size?: number; page_offset?: number; filter_industry?: number | null }
+        Args: { p_user_id: string; p_page_size?: number; p_page_offset?: number; p_filter_industry?: number | null }
         Returns: Array<{
           id: number
           author_id: string

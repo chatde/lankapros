@@ -169,6 +169,10 @@ export default function FeedPage() {
     )
   }
 
+  function handleDeletePost(postId: number) {
+    setPosts(prev => prev.filter(p => p.id !== postId))
+  }
+
   function focusComposer() {
     if (composerRef.current) {
       composerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -238,6 +242,7 @@ export default function FeedPage() {
               currentUserId={userId || ''}
               onLikeToggle={handleLikeToggle}
               onCommentAdded={handleCommentAdded}
+              onDelete={handleDeletePost}
             />
           ))}
           <div ref={sentinelRef} className="h-4" />

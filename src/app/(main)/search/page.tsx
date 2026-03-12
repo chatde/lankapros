@@ -56,7 +56,7 @@ export default function SearchPage() {
       }
 
       if (groupsData) setGroups(groupsData)
-    } catch (err) {
+    } catch (_err) {
       toast.error('Search failed. Please try again.')
     } finally {
       setLoading(false)
