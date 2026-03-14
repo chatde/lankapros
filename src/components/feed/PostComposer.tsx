@@ -88,14 +88,14 @@ export default function PostComposer({ onPost, groupId }: PostComposerProps) {
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
+      toast.error('Only JPEG, PNG, GIF, and WebP images are allowed.')
       e.target.value = ''
       return
     }
 
     const maxSize = 5 * 1024 * 1024 // 5MB
     if (file.size > maxSize) {
-      alert('File too large. Maximum size for post images is 5MB.')
+      toast.error('Image too large — maximum 5MB.')
       e.target.value = ''
       return
     }
@@ -116,7 +116,13 @@ export default function PostComposer({ onPost, groupId }: PostComposerProps) {
       <textarea
         value={content}
         onChange={e => setContent(e.target.value)}
-        placeholder="Share something with your network..."
+        onKeyDown={e => {
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && content.trim()) {
+            e.preventDefault()
+            handleSubmit()
+          }
+        }}
+        placeholder="Share something with your network… (Ctrl+Enter to post)"
         className="w-full bg-transparent border-none outline-none resize-none text-foreground placeholder:text-muted min-h-[80px]"
         maxLength={5000}
       />

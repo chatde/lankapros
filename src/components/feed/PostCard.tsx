@@ -27,27 +27,29 @@ export default function PostCard({ post, currentUserId, onLikeToggle, onCommentA
     if (liking) return
     setLiking(true)
 
+    // Optimistic update — flip UI immediately, revert on failure
+    const wasLiked = post.user_liked
+    onLikeToggle(post.id, !wasLiked)
+
     try {
       const supabase = createClient()
 
-      if (post.user_liked) {
-        await supabase
+      if (wasLiked) {
+        const { error } = await supabase
           .from('post_likes')
           .delete()
           .eq('post_id', post.id)
           .eq('user_id', currentUserId)
-
-        onLikeToggle(post.id, false)
+        if (error) throw error
       } else {
-        await supabase
+        const { error } = await supabase
           .from('post_likes')
           .insert({ post_id: post.id, user_id: currentUserId })
+        if (error) throw error
 
-        onLikeToggle(post.id, true)
-
-        // Create notification
+        // Create notification (fire-and-forget — don't block UX on this)
         if (post.author_id !== currentUserId) {
-          await supabase.from('notifications').insert({
+          void supabase.from('notifications').insert({
             user_id: post.author_id,
             type: 'post_like',
             actor_id: currentUserId,
@@ -57,7 +59,9 @@ export default function PostCard({ post, currentUserId, onLikeToggle, onCommentA
           })
         }
       }
-    } catch (_err) {
+    } catch {
+      // Revert optimistic update
+      onLikeToggle(post.id, wasLiked)
       toast.error('Failed to update like. Please try again.')
     } finally {
       setLiking(false)
@@ -65,10 +69,14 @@ export default function PostCard({ post, currentUserId, onLikeToggle, onCommentA
   }
 
   async function handleDelete() {
+    if (!window.confirm('Delete this post? This cannot be undone.')) return
     const supabase = createClient()
     const { error } = await supabase.from('posts').delete().eq('id', post.id).eq('author_id', currentUserId)
     if (!error && onDelete) {
       onDelete(post.id)
+      toast.success('Post deleted.')
+    } else if (error) {
+      toast.error('Could not delete post. Please try again.')
     }
   }
 

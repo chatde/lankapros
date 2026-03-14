@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 import type { Comment, Profile } from '@/types/database'
-import { Loader2, Send } from 'lucide-react'
+import { Loader2, Send, Trash2 } from 'lucide-react'
 
 interface CommentSectionProps {
   postId: number
@@ -59,7 +59,10 @@ export default function CommentSection({ postId, postAuthorId, currentUserId, on
         .select('*, profiles(full_name, username, avatar_url)')
         .single()
 
-      if (!error && data) {
+      if (error) {
+        throw error
+      }
+      if (data) {
         setComments(prev => [...prev, data as CommentWithAuthor])
         setContent('')
         onCommentAdded()
@@ -94,7 +97,7 @@ export default function CommentSection({ postId, postAuthorId, currentUserId, on
   return (
     <div className="mt-3 pt-3 border-t border-border space-y-3">
       {comments.map(comment => (
-        <div key={comment.id} className="flex gap-2">
+        <div key={comment.id} className="flex gap-2 group">
           <Link href={`/${comment.profiles?.username || comment.author_id}`}>
             <Avatar src={comment.profiles?.avatar_url} name={comment.profiles?.full_name} size="sm" />
           </Link>
@@ -107,6 +110,26 @@ export default function CommentSection({ postId, postAuthorId, currentUserId, on
                 {comment.profiles?.full_name || 'Anonymous'}
               </Link>
               <span className="text-xs text-muted">{formatDate(comment.created_at)}</span>
+              {comment.author_id === currentUserId && (
+                <button
+                  onClick={async () => {
+                    if (!window.confirm('Delete this comment?')) return
+                    const supabase = createClient()
+                    const { error } = await supabase
+                      .from('comments')
+                      .delete()
+                      .eq('id', comment.id)
+                      .eq('author_id', currentUserId)
+                    if (!error) {
+                      setComments(prev => prev.filter(c => c.id !== comment.id))
+                    }
+                  }}
+                  className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded text-muted hover:text-danger"
+                  title="Delete comment"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
             </div>
             <p className="text-sm mt-0.5">{comment.content}</p>
           </div>

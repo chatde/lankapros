@@ -98,6 +98,12 @@ function LoginForm() {
 
           {error && <p className="text-sm text-danger">{error}</p>}
 
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-xs text-muted hover:text-accent transition-colors">
+              Forgot password?
+            </Link>
+          </div>
+
           <Button type="submit" loading={loading} className="w-full">
             Sign in
           </Button>

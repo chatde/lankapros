@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User, Search } from 'lucide-react'
+import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User, Search, Menu, X } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const navItems = [
@@ -32,6 +32,7 @@ export default function Navbar() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -170,10 +171,19 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             {/* Avatar — shown on both mobile and desktop when logged in */}
             {profile && (
-              <Link href={profileHref} className="flex items-center" title={profile.full_name || 'Profile'}>
+              <Link href={profileHref} className="hidden md:flex items-center" title={profile.full_name || 'Profile'}>
                 <Avatar src={profile.avatar_url} name={profile.full_name} size="sm" className="w-7 h-7" />
               </Link>
             )}
+
+            {/* Mobile hamburger menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(prev => !prev)}
+              className="md:hidden p-2 rounded-lg text-muted hover:text-foreground hover:bg-card transition-colors"
+              title="Menu"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
 
             <Link
               href="/search"
@@ -211,6 +221,64 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
+      {/* Mobile slide-down menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-background border-b border-border px-4 py-3 space-y-1">
+          {profile && (
+            <Link
+              href={profileHref}
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-card transition-colors"
+            >
+              <Avatar src={profile.avatar_url} name={profile.full_name} size="sm" className="w-7 h-7" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">{profile.full_name || 'Profile'}</p>
+                {profile.username && <p className="text-xs text-muted">@{profile.username}</p>}
+              </div>
+            </Link>
+          )}
+          <Link
+            href="/settings"
+            onClick={() => setMobileMenuOpen(false)}
+            className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors', pathname.startsWith('/settings') ? 'text-accent bg-accent/10' : 'text-muted hover:text-foreground hover:bg-card')}
+          >
+            <Settings className="h-5 w-5" />
+            <span className="text-sm">Settings</span>
+          </Link>
+          <Link
+            href="/connections"
+            onClick={() => setMobileMenuOpen(false)}
+            className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors', pathname.startsWith('/connections') ? 'text-accent bg-accent/10' : 'text-muted hover:text-foreground hover:bg-card')}
+          >
+            <Users className="h-5 w-5" />
+            <span className="text-sm">Connections</span>
+          </Link>
+          <Link
+            href="/groups"
+            onClick={() => setMobileMenuOpen(false)}
+            className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors', pathname.startsWith('/groups') ? 'text-accent bg-accent/10' : 'text-muted hover:text-foreground hover:bg-card')}
+          >
+            <Users2 className="h-5 w-5" />
+            <span className="text-sm">Groups</span>
+          </Link>
+          <Link
+            href="/economy"
+            onClick={() => setMobileMenuOpen(false)}
+            className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors', pathname.startsWith('/economy') ? 'text-accent bg-accent/10' : 'text-muted hover:text-foreground hover:bg-card')}
+          >
+            <TrendingUp className="h-5 w-5" />
+            <span className="text-sm">Economy</span>
+          </Link>
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted hover:text-red-400 hover:bg-card transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="text-sm">Sign out</span>
+          </button>
+        </div>
+      )}
 
       {/* Mobile bottom nav — only on small screens */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border">
