@@ -415,39 +415,43 @@ function ExistingUserEditForm({
   const [skillsText, setSkillsText] = useState(initialSkillsText)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [coverPreview, setCoverPreview] = useState<string | null>(null)
 
   const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
   function handleAvatarSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) { setAvatarFile(null); return }
+    if (!file) { setAvatarFile(null); setAvatarPreview(null); return }
     if (!allowedImageTypes.includes(file.type)) {
-      alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
+      toast.error('Only JPEG, PNG, GIF, and WebP images are allowed.')
       e.target.value = ''
       return
     }
     if (file.size > 2 * 1024 * 1024) {
-      alert('File too large. Maximum size for avatars is 2MB.')
+      toast.error('Avatar too large — maximum 2MB.')
       e.target.value = ''
       return
     }
     setAvatarFile(file)
+    setAvatarPreview(URL.createObjectURL(file))
   }
 
   function handleCoverSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) { setCoverFile(null); return }
+    if (!file) { setCoverFile(null); setCoverPreview(null); return }
     if (!allowedImageTypes.includes(file.type)) {
-      alert('Invalid file type. Only JPEG, PNG, GIF, and WebP images are allowed.')
+      toast.error('Only JPEG, PNG, GIF, and WebP images are allowed.')
       e.target.value = ''
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      alert('File too large. Maximum size for cover photos is 5MB.')
+      toast.error('Cover photo too large — maximum 5MB.')
       e.target.value = ''
       return
     }
     setCoverFile(file)
+    setCoverPreview(URL.createObjectURL(file))
   }
 
   function updateProfile(field: keyof Profile, value: string | number | null) {
@@ -627,10 +631,16 @@ function ExistingUserEditForm({
           <div>
             <label className="block text-sm font-medium text-muted mb-1">Avatar</label>
             <input type="file" accept="image/*" onChange={handleAvatarSelect} className="text-sm text-muted" />
+            {avatarPreview && (
+              <img src={avatarPreview} alt="Avatar preview" className="mt-2 w-16 h-16 rounded-full object-cover border border-border" />
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-muted mb-1">Cover photo</label>
             <input type="file" accept="image/*" onChange={handleCoverSelect} className="text-sm text-muted" />
+            {coverPreview && (
+              <img src={coverPreview} alt="Cover preview" className="mt-2 w-full max-h-32 rounded-lg object-cover border border-border" />
+            )}
           </div>
         </div>
       </Card>

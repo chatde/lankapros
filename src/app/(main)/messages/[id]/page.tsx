@@ -180,7 +180,7 @@ export default function ChatPage({ params }: Props) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col h-[calc(100vh-10rem)]">
+    <div className="max-w-2xl mx-auto flex flex-col" style={{ height: 'calc(100dvh - 10rem)' }}>
       {/* Header */}
       <div className="flex items-center gap-3 pb-3 border-b border-border shrink-0">
         <Link href="/messages" className="p-2 rounded-lg hover:bg-card transition-colors">

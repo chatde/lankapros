@@ -10,6 +10,24 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Card from '@/components/ui/Card'
 
+// Map raw Supabase auth error messages to user-friendly strings
+function friendlyAuthError(msg: string): string {
+  const lower = msg.toLowerCase()
+  if (lower.includes('invalid login') || lower.includes('invalid credentials') || lower.includes('wrong password')) {
+    return 'Incorrect email or password. Please try again.'
+  }
+  if (lower.includes('email not confirmed') || lower.includes('not confirmed')) {
+    return 'Please verify your email first — check your inbox for the confirmation link.'
+  }
+  if (lower.includes('too many requests') || lower.includes('rate limit')) {
+    return 'Too many attempts. Please wait a moment before trying again.'
+  }
+  if (lower.includes('user not found') || lower.includes('no user found')) {
+    return 'No account found with that email.'
+  }
+  return msg
+}
+
 export default function LoginPage() {
   return (
     <Suspense>
@@ -24,10 +42,17 @@ function LoginForm() {
   const rawRedirect = searchParams.get('redirect') || '/feed'
   // Prevent open redirect — only allow relative paths on same origin
   const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/feed'
+
+  // Read OAuth error param from /auth/callback redirect
+  const oauthError = searchParams.get('error')
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState(
+    oauthError ? 'Google sign-in failed. Please try again or use email and password.' : ''
+  )
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -48,33 +73,45 @@ function LoginForm() {
       })
 
       if (authError) {
-        setError(authError.message)
+        setError(friendlyAuthError(authError.message))
         return
       }
 
       router.push(redirect)
       router.refresh()
     } catch {
-      setError('An unexpected error occurred')
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   async function handleGoogleLogin() {
+    setGoogleLoading(true)
     const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
+    const { error: oauthErr } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
       },
     })
+    if (oauthErr) {
+      setError('Could not connect to Google. Please try email sign-in.')
+      setGoogleLoading(false)
+    }
+    // If no error, browser redirects — loading state stays until redirect
   }
 
   return (
     <AuthLayout>
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Welcome back</h2>
+
+        {error && (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-danger/10 border border-danger/20">
+            <p className="text-sm text-danger">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
@@ -96,8 +133,6 @@ function LoginForm() {
             autoComplete="current-password"
           />
 
-          {error && <p className="text-sm text-danger">{error}</p>}
-
           <div className="flex justify-end">
             <Link href="/forgot-password" className="text-xs text-muted hover:text-accent transition-colors">
               Forgot password?
@@ -118,7 +153,7 @@ function LoginForm() {
           </div>
         </div>
 
-        <Button variant="secondary" onClick={handleGoogleLogin} className="w-full">
+        <Button variant="secondary" onClick={handleGoogleLogin} loading={googleLoading} className="w-full">
           Continue with Google
         </Button>
 

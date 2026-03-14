@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, startTransition } from 'react
 import { createClient } from '@/lib/supabase/client'
 import PostComposer from '@/components/feed/PostComposer'
 import PostCard from '@/components/feed/PostCard'
+import PostCardSkeleton from '@/components/feed/PostCardSkeleton'
 import WelcomeBanner from '@/components/feed/WelcomeBanner'
 import EmptyFeedState from '@/components/feed/EmptyFeedState'
 import SuggestedConnections from '@/components/feed/SuggestedConnections'
@@ -220,8 +221,10 @@ export default function FeedPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        <div className="space-y-4">
+          <PostCardSkeleton />
+          <PostCardSkeleton />
+          <PostCardSkeleton />
         </div>
       ) : posts.length === 0 ? (
         <>

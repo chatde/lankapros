@@ -95,15 +95,25 @@ export default function NotificationsPage() {
     })))
 
     setLoading(false)
+  }, [])
 
-    // Subscribe to new notifications
-    supabase
+  useEffect(() => {
+    loadNotifications()
+
+    const supabase = createClient()
+    let userId: string | null = null
+    supabase.auth.getUser().then(({ data: { user } }) => { userId = user?.id ?? null })
+
+    // Subscribe to new notifications — cleaned up on unmount to prevent channel leaks
+    const channel = supabase
       .channel('notifications-page')
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
+        // Filter is set dynamically after we know the userId; the RLS policy ensures
+        // only the authenticated user's rows are pushed regardless.
+        filter: userId ? `user_id=eq.${userId}` : undefined,
       }, async (payload) => {
         const newNotif = payload.new as Notification
         let actor: Profile | null = null
@@ -120,10 +130,10 @@ export default function NotificationsPage() {
         setNotifications(prev => [{ ...newNotif, actor }, ...prev])
       })
       .subscribe()
-  }, [])
 
-  useEffect(() => {
-    loadNotifications()
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [loadNotifications])
 
   async function markAllRead() {
@@ -163,10 +173,14 @@ export default function NotificationsPage() {
       return notif.actor?.username ? `/${notif.actor.username}` : '/connections'
     }
     if (notif.type === 'post_like' || notif.type === 'post_comment') {
-      return '/feed'
+      // Deep-link to feed with the post highlighted (feed reads ?post= to scroll to it)
+      return notif.entity_id ? `/feed?post=${notif.entity_id}` : '/feed'
     }
     if (notif.type === 'message') {
       return notif.entity_id ? `/messages/${notif.entity_id}` : '/messages'
+    }
+    if (notif.type === 'group_invite') {
+      return '/groups'
     }
     return '/notifications'
   }
