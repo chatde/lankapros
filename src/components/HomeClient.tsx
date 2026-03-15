@@ -1,0 +1,241 @@
+"use client";
+
+import Link from "next/link";
+import Tilt from "react-parallax-tilt";
+import { InteractiveGlobe } from "@/components/ui/interactive-globe";
+import FadeIn from "@/components/interactive/fade-in";
+import SplitText from "@/components/interactive/split-text";
+import MagneticButton from "@/components/interactive/magnetic-button";
+
+const features = [
+  {
+    title: "Build Your Profile",
+    desc: "Customize your profile with MySpace-style themes. Stand out with unique colors and patterns.",
+    icon: "\u{1F3A8}",
+  },
+  {
+    title: "Grow Your Network",
+    desc: "Connect with professionals across 19 Sri Lankan industries. From IT to Tea & Agriculture.",
+    icon: "\u{1F91D}",
+  },
+  {
+    title: "Share & Engage",
+    desc: "Post updates, join industry groups, and message connections in real-time.",
+    icon: "\u{1F4AC}",
+  },
+];
+
+const industries = [
+  "\u{1F4BB} IT",
+  "\u{1F3E8} Tourism",
+  "\u{1F33F} Agriculture",
+  "\u{1F454} Apparel",
+  "\u{1F3E6} Finance",
+  "\u{1F4DA} Education",
+  "\u{1F3E5} Healthcare",
+  "\u{1F3D7}\uFE0F Construction",
+  "\u{1F3ED} Manufacturing",
+  "\u{1F6A2} Logistics",
+  "\u{1F48E} Gems",
+  "\u{1F3AC} Media",
+  "\u{1F4E1} Telecom",
+  "\u{1F3DB}\uFE0F Government",
+  "\u2696\uFE0F Legal",
+  "\u{1F91D} NGO",
+  "\u{1F680} Startups",
+  "\u{1F4BC} Freelance",
+  "\u{1F3A8} Arts",
+];
+
+export default function HomeClient() {
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <div className="relative overflow-hidden">
+        <div className="pattern-lotus absolute inset-0 opacity-30" />
+        <div className="relative max-w-5xl mx-auto px-4 py-16">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-4">
+            {/* Left — copy */}
+            <div className="flex-1 text-center md:text-left">
+              <FadeIn>
+                <div className="inline-flex items-center gap-3 mb-6">
+                  <div className="text-2xl tracking-widest font-serif-display text-accent opacity-60">
+                    ✦ LP ✦
+                  </div>
+                </div>
+              </FadeIn>
+
+              <h1 className="font-serif-display text-4xl md:text-6xl font-bold mb-4">
+                <SplitText text="Lanka" as="span" stagger={40} />
+                <SplitText
+                  text="Pros"
+                  as="span"
+                  className="text-accent"
+                  stagger={40}
+                  delay={200}
+                />
+              </h1>
+
+              <FadeIn delay={400}>
+                <p className="font-serif-display text-2xl md:text-3xl text-accent/70 italic mb-2">
+                  Ayubowan!
+                </p>
+              </FadeIn>
+
+              <FadeIn delay={550}>
+                <p className="text-lg text-muted max-w-xl mb-8">
+                  Sri Lanka&apos;s professional network. Connect, collaborate, and grow
+                  your career with professionals across the island and the globe.
+                </p>
+              </FadeIn>
+
+              <FadeIn delay={700}>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
+                  <MagneticButton as="div" strength={0.25}>
+                    <Link
+                      href="/signup"
+                      className="inline-flex items-center justify-center h-12 px-8 rounded-lg bg-accent text-black font-semibold hover:bg-accent-hover transition-colors"
+                    >
+                      Join now — it&apos;s free
+                    </Link>
+                  </MagneticButton>
+                  <MagneticButton as="div" strength={0.25}>
+                    <Link
+                      href="/login"
+                      className="inline-flex items-center justify-center h-12 px-8 rounded-lg border border-border text-foreground font-semibold hover:bg-card transition-colors"
+                    >
+                      Sign in
+                    </Link>
+                  </MagneticButton>
+                </div>
+              </FadeIn>
+            </div>
+
+            {/* Right — interactive globe */}
+            <FadeIn className="flex-1 flex items-center justify-center" delay={300}>
+              <div className="relative">
+                <p className="absolute -top-5 left-1/2 -translate-x-1/2 text-xs text-muted whitespace-nowrap">
+                  Drag to explore · Sri Lanka connected worldwide
+                </p>
+                <InteractiveGlobe size={440} />
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </div>
+
+      {/* Economy Dashboard CTA */}
+      <FadeIn className="max-w-5xl mx-auto px-4 py-12">
+        <Tilt
+          tiltMaxAngleX={5}
+          tiltMaxAngleY={5}
+          scale={1.02}
+          glareEnable={true}
+          glareMaxOpacity={0.08}
+          glareColor="#D4A843"
+          perspective={1200}
+          transitionSpeed={600}
+        >
+          <Link
+            href="/economy"
+            className="economy-card block rounded-xl bg-card border border-border p-8 hover:bg-card-hover transition-colors group"
+          >
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="w-16 h-16 rounded-xl border border-accent/20 bg-accent/8 flex items-center justify-center text-2xl text-accent flex-shrink-0">
+                ◈
+              </div>
+              <div className="text-center md:text-left flex-1">
+                <h2 className="font-serif-display text-2xl font-bold mb-2 italic">
+                  Sri Lanka Pulse — Economy Dashboard
+                </h2>
+                <p className="text-muted mb-3">
+                  The most comprehensive free country tracker for Sri Lanka. Live GDP,
+                  exchange rates, stock market, weather, news sentiment, strategic
+                  intelligence, and more — all from public data sources.
+                </p>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 text-xs">
+                  {[
+                    "Live Data",
+                    "Compare Mode",
+                    "Time Machine",
+                    "Intelligence",
+                    "Weather",
+                    "News",
+                    "11 Tabs",
+                  ].map((tag) => (
+                    <span
+                      key={tag}
+                      className="data-tag px-2 py-1 rounded-full bg-accent/10 text-accent text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <span className="text-accent text-2xl group-hover:translate-x-1 transition-transform">
+                →
+              </span>
+            </div>
+          </Link>
+        </Tilt>
+      </FadeIn>
+
+      {/* Features */}
+      <div className="max-w-5xl mx-auto px-4 py-16">
+        <div className="grid md:grid-cols-3 gap-6">
+          {features.map((feature, i) => (
+            <FadeIn key={feature.title} delay={i * 150}>
+              <Tilt
+                tiltMaxAngleX={5}
+                tiltMaxAngleY={5}
+                scale={1.02}
+                glareEnable={true}
+                glareMaxOpacity={0.08}
+                glareColor="#D4A843"
+                perspective={1200}
+                transitionSpeed={600}
+              >
+                <div className="rounded-xl bg-card border border-border p-6 text-center h-full">
+                  <div className="text-4xl mb-3">{feature.icon}</div>
+                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-sm text-muted">{feature.desc}</p>
+                </div>
+              </Tilt>
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+
+      {/* Industries */}
+      <FadeIn className="max-w-5xl mx-auto px-4 py-16 text-center" delay={100}>
+        <h2 className="text-2xl font-bold mb-6">19 Sri Lankan Industries</h2>
+        <div className="flex flex-wrap justify-center gap-2">
+          {industries.map((ind) => (
+            <span
+              key={ind}
+              className="px-3 py-1.5 rounded-full bg-card border border-border text-sm"
+            >
+              {ind}
+            </span>
+          ))}
+        </div>
+      </FadeIn>
+
+      {/* Footer */}
+      <FadeIn as="footer" className="border-t border-border py-8 text-center text-sm text-muted">
+        <p>
+          &copy; {new Date().getFullYear()} LankaPros. Built for Sri Lankan
+          professionals.
+        </p>
+        <div className="mt-3 flex justify-center gap-4">
+          <Link href="/privacy" className="hover:text-foreground transition-colors">
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="hover:text-foreground transition-colors">
+            Terms of Service
+          </Link>
+        </div>
+      </FadeIn>
+    </div>
+  );
+}

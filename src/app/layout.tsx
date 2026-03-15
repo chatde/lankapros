@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono, DM_Serif_Display } from 'next/font/google'
 import { Toaster } from 'sonner'
 import CookieConsent from '@/components/CookieConsent'
+import SmoothScroll from '@/components/interactive/smooth-scroll'
 import './globals.css'
 
 const geistSans = Geist({
@@ -69,7 +70,9 @@ export default function RootLayout({
           }}
         />
         <Toaster theme="dark" position="bottom-right" />
-        {children}
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
         <CookieConsent />
       </body>
     </html>

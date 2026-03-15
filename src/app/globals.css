@@ -1,5 +1,57 @@
 @import "tailwindcss";
 
+/* Lenis smooth scroll */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Selection color matching gold accent */
+::selection {
+  background: rgba(212, 168, 67, 0.3);
+  color: #ededed;
+}
+
+::-moz-selection {
+  background: rgba(212, 168, 67, 0.3);
+  color: #ededed;
+}
+
+/* View Transitions */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: fade-out 0.2s ease-in;
+}
+
+::view-transition-new(root) {
+  animation: fade-in-vt 0.3s ease-out;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in-vt {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
@@ -99,7 +151,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted);
+  background: var(--accent);
 }
 
 /* Animations */
