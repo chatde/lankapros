@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, DM_Serif_Display } from 'next/font/google'
 import { Toaster } from 'sonner'
 import CookieConsent from '@/components/CookieConsent'
 import SmoothScroll from '@/components/interactive/smooth-scroll'
+import { Analytics } from '@vercel/analytics/react'
 import './globals.css'
 
 const geistSans = Geist({
@@ -74,6 +75,7 @@ export default function RootLayout({
           {children}
         </SmoothScroll>
         <CookieConsent />
+        <Analytics />
       </body>
     </html>
   )

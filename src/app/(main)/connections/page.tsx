@@ -209,6 +209,14 @@ export default function ConnectionsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
 
+      {/* Page header */}
+      <div>
+        <h1 className="text-2xl font-bold">My Network</h1>
+        <p className="text-sm text-muted mt-0.5">
+          Manage your connections and discover professionals in your industry
+        </p>
+      </div>
+
       {/* Pending requests */}
       {pending.length > 0 && (
         <section>

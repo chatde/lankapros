@@ -427,6 +427,126 @@ export interface Database {
           icon?: string | null
         }
       }
+      jobs: {
+        Row: {
+          id: number
+          poster_id: string
+          title: string
+          company: string
+          company_logo_url: string | null
+          location: string
+          location_type: 'onsite' | 'remote' | 'hybrid'
+          employment_type: 'full_time' | 'part_time' | 'contract' | 'internship' | 'freelance'
+          industry_id: number | null
+          description: string
+          requirements: string | null
+          salary_min: number | null
+          salary_max: number | null
+          salary_currency: string
+          apply_url: string | null
+          apply_email: string | null
+          is_active: boolean
+          application_count: number
+          view_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          poster_id: string
+          title: string
+          company: string
+          company_logo_url?: string | null
+          location: string
+          location_type?: 'onsite' | 'remote' | 'hybrid'
+          employment_type?: 'full_time' | 'part_time' | 'contract' | 'internship' | 'freelance'
+          industry_id?: number | null
+          description: string
+          requirements?: string | null
+          salary_min?: number | null
+          salary_max?: number | null
+          salary_currency?: string
+          apply_url?: string | null
+          apply_email?: string | null
+          is_active?: boolean
+          application_count?: number
+          view_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          poster_id?: string
+          title?: string
+          company?: string
+          company_logo_url?: string | null
+          location?: string
+          location_type?: 'onsite' | 'remote' | 'hybrid'
+          employment_type?: 'full_time' | 'part_time' | 'contract' | 'internship' | 'freelance'
+          industry_id?: number | null
+          description?: string
+          requirements?: string | null
+          salary_min?: number | null
+          salary_max?: number | null
+          salary_currency?: string
+          apply_url?: string | null
+          apply_email?: string | null
+          is_active?: boolean
+          application_count?: number
+          view_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      job_saves: {
+        Row: {
+          id: number
+          job_id: number
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          job_id: number
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          job_id?: number
+          user_id?: string
+          created_at?: string
+        }
+      }
+      job_applications: {
+        Row: {
+          id: number
+          job_id: number
+          applicant_id: string
+          cover_letter: string | null
+          status: 'applied' | 'viewed' | 'shortlisted' | 'rejected'
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          job_id: number
+          applicant_id: string
+          cover_letter?: string | null
+          status?: 'applied' | 'viewed' | 'shortlisted' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          job_id?: number
+          applicant_id?: string
+          cover_letter?: string | null
+          status?: 'applied' | 'viewed' | 'shortlisted' | 'rejected'
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -476,5 +596,9 @@ export type Group = Database['public']['Tables']['groups']['Row']
 export type GroupMember = Database['public']['Tables']['group_members']['Row']
 export type Notification = Database['public']['Tables']['notifications']['Row']
 export type Industry = Database['public']['Tables']['industries']['Row']
+
+export type Job = Database['public']['Tables']['jobs']['Row']
+export type JobSave = Database['public']['Tables']['job_saves']['Row']
+export type JobApplication = Database['public']['Tables']['job_applications']['Row']
 
 export type FeedPost = Database['public']['Functions']['get_feed']['Returns'][number]

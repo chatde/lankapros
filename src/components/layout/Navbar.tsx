@@ -1,19 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import Avatar from '@/components/ui/Avatar'
-import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User, Search, Menu, X } from 'lucide-react'
+import { Home, Users, MessageCircle, Bell, LogOut, Settings, TrendingUp, Users2, User, Search, Menu, X, Briefcase } from 'lucide-react'
 import type { Profile } from '@/types/database'
 
 const navItems = [
   { label: 'Feed', href: '/feed', icon: Home },
-  { label: 'Connections', href: '/connections', icon: Users },
+  { label: 'Network', href: '/connections', icon: Users },
+  { label: 'Jobs', href: '/jobs', icon: Briefcase },
   { label: 'Messages', href: '/messages', icon: MessageCircle },
-  { label: 'Groups', href: '/groups', icon: Users2 },
   { label: 'Notifications', href: '/notifications', icon: Bell },
   { label: 'Economy', href: '/economy', icon: TrendingUp },
 ]
@@ -33,6 +33,8 @@ export default function Navbar() {
   const [unreadNotifications, setUnreadNotifications] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const channelsRef = useRef<any[]>([])
 
   useEffect(() => {
     const supabase = createClient()
@@ -75,8 +77,8 @@ export default function Navbar() {
         setUnreadMessages(msgCount || 0)
       }
 
-      // Subscribe to real-time notifications
-      supabase
+      // Subscribe to real-time notifications (filtered to current user)
+      const notifChannel = supabase
         .channel('navbar-notifications')
         .on('postgres_changes', {
           event: 'INSERT',
@@ -88,23 +90,33 @@ export default function Navbar() {
         })
         .subscribe()
 
-      // Subscribe to real-time messages
-      supabase
+      // Subscribe to real-time messages (filtered to user's conversations only)
+      const convIds = convos?.map(c => c.id).join(',') ?? ''
+      const msgChannel = convIds ? supabase
         .channel('navbar-messages')
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
+          filter: `conversation_id=in.(${convIds})`,
         }, (payload) => {
           const msg = payload.new as { sender_id: string }
           if (msg.sender_id !== user.id) {
             setUnreadMessages(prev => prev + 1)
           }
         })
-        .subscribe()
+        .subscribe() : null
+
+      // Store channels for cleanup
+      channelsRef.current = [notifChannel, msgChannel].filter(Boolean)
     }
 
     loadProfile()
+    return () => {
+      channelsRef.current.forEach(ch => {
+        if (ch) createClient().removeChannel(ch)
+      })
+    }
   }, [])
 
   async function handleSignOut() {
@@ -252,7 +264,15 @@ export default function Navbar() {
             className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors', pathname.startsWith('/connections') ? 'text-accent bg-accent/10' : 'text-muted hover:text-foreground hover:bg-card')}
           >
             <Users className="h-5 w-5" />
-            <span className="text-sm">Connections</span>
+            <span className="text-sm">My Network</span>
+          </Link>
+          <Link
+            href="/jobs"
+            onClick={() => setMobileMenuOpen(false)}
+            className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors', pathname.startsWith('/jobs') ? 'text-accent bg-accent/10' : 'text-muted hover:text-foreground hover:bg-card')}
+          >
+            <Briefcase className="h-5 w-5" />
+            <span className="text-sm">Jobs</span>
           </Link>
           <Link
             href="/groups"

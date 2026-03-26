@@ -11,11 +11,28 @@ export default async function ProfilePage({ params }: Props) {
   const { username } = await params
   const supabase = await createClient()
 
-  const { data: profileData } = await supabase
+  // Try username first, then fall back to UUID lookup
+  let profileData = null
+  const { data: byUsername } = await supabase
     .from('profiles')
     .select('*')
     .eq('username', username)
     .single()
+
+  if (byUsername) {
+    profileData = byUsername
+  } else {
+    // Check if it's a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (uuidRegex.test(username)) {
+      const { data: byId } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', username)
+        .single()
+      profileData = byId
+    }
+  }
 
   if (!profileData) {
     notFound()

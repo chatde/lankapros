@@ -8,8 +8,10 @@ import PostCardSkeleton from '@/components/feed/PostCardSkeleton'
 import WelcomeBanner from '@/components/feed/WelcomeBanner'
 import EmptyFeedState from '@/components/feed/EmptyFeedState'
 import SuggestedConnections from '@/components/feed/SuggestedConnections'
+import FeedProfileCard from '@/components/feed/FeedProfileCard'
+import TrendingWidget from '@/components/feed/TrendingWidget'
 import { INDUSTRIES } from '@/lib/constants'
-import type { FeedPost } from '@/types/database'
+import type { FeedPost, Profile, Industry } from '@/types/database'
 import { Loader2 } from 'lucide-react'
 
 const PAGE_SIZE = 20
@@ -23,6 +25,8 @@ export default function FeedPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [firstName, setFirstName] = useState<string>('')
   const [isNewUser, setIsNewUser] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [industry, setIndustry] = useState<Industry | null>(null)
   const offsetRef = useRef(0)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
@@ -42,18 +46,28 @@ export default function FeedPage() {
     if (reset) {
       setLoading(true)
 
-      // Fetch profile info for welcome banner
-      const { data: profile } = await supabase
+      // Fetch profile info for welcome banner + sidebar
+      const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, connection_count, post_count')
+        .select('*')
         .eq('id', user.id)
         .single()
 
-      if (profile) {
-        const first = profile.full_name?.split(' ')[0] ?? 'there'
+      if (profileData) {
+        setProfile(profileData)
+        const first = profileData.full_name?.split(' ')[0] ?? 'there'
         setFirstName(first)
-        // Truly new: no connections AND no posts
-        setIsNewUser(profile.connection_count === 0 && profile.post_count === 0)
+        setIsNewUser(profileData.connection_count === 0 && profileData.post_count === 0)
+
+        // Fetch industry for sidebar
+        if (profileData.industry_id) {
+          const { data: ind } = await supabase
+            .from('industries')
+            .select('*')
+            .eq('id', profileData.industry_id)
+            .single()
+          if (ind) setIndustry(ind)
+        }
       }
     } else {
       setLoadingMore(true)
@@ -115,7 +129,7 @@ export default function FeedPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'posts' },
         async (payload) => {
-          // Skip own posts — handleNewPost covers those
+          // Skip own posts -- handleNewPost covers those
           if (payload.new?.user_id === currentUserId) return
 
           // Fetch the new post in FeedPost shape via get_feed
@@ -145,7 +159,6 @@ export default function FeedPage() {
   }, [])
 
   function handleNewPost(post: FeedPost) {
-    // When a new user posts, they're no longer a new user
     setIsNewUser(false)
     setPosts(prev => [post, ...prev])
   }
@@ -183,79 +196,104 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
-      {/* Welcome banner — only for truly new users */}
-      {!loading && isNewUser && (
-        <WelcomeBanner firstName={firstName} onWritePost={focusComposer} />
-      )}
+    <div className="flex gap-5 max-w-6xl mx-auto">
+      {/* Left sidebar -- profile card (desktop only) */}
+      <aside className="hidden lg:block w-[220px] shrink-0">
+        <div className="sticky top-20 space-y-3">
+          {profile ? (
+            <FeedProfileCard profile={profile} industry={industry} />
+          ) : !loading ? null : (
+            <div className="rounded-xl bg-card border border-border p-4 animate-pulse">
+              <div className="h-16 bg-background rounded-lg mb-3" />
+              <div className="h-4 bg-background rounded w-3/4 mb-2" />
+              <div className="h-3 bg-background rounded w-1/2" />
+            </div>
+          )}
+        </div>
+      </aside>
 
-      <div ref={composerRef}>
-        <PostComposer onPost={handleNewPost} />
-      </div>
+      {/* Center feed column */}
+      <div className="flex-1 min-w-0 max-w-2xl space-y-4">
+        {/* Welcome banner -- only for truly new users */}
+        {!loading && isNewUser && (
+          <WelcomeBanner firstName={firstName} onWritePost={focusComposer} />
+        )}
 
-      {/* Industry filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
-        <button
-          onClick={() => setIndustryFilter(null)}
-          className={`shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${
-            industryFilter === null
-              ? 'bg-accent text-black'
-              : 'bg-card border border-border text-muted hover:text-foreground'
-          }`}
-        >
-          All
-        </button>
-        {INDUSTRIES.map((ind, i) => (
+        <div ref={composerRef}>
+          <PostComposer onPost={handleNewPost} />
+        </div>
+
+        {/* Industry filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
           <button
-            key={ind.slug}
-            onClick={() => setIndustryFilter(i + 1)}
+            onClick={() => setIndustryFilter(null)}
             className={`shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${
-              industryFilter === i + 1
+              industryFilter === null
                 ? 'bg-accent text-black'
                 : 'bg-card border border-border text-muted hover:text-foreground'
             }`}
           >
-            {ind.icon} {ind.name.split(' ')[0]}
+            All
           </button>
-        ))}
+          {INDUSTRIES.map((ind, i) => (
+            <button
+              key={ind.slug}
+              onClick={() => setIndustryFilter(i + 1)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${
+                industryFilter === i + 1
+                  ? 'bg-accent text-black'
+                  : 'bg-card border border-border text-muted hover:text-foreground'
+              }`}
+            >
+              {ind.icon} {ind.name.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="space-y-4">
+            <PostCardSkeleton />
+            <PostCardSkeleton />
+            <PostCardSkeleton />
+          </div>
+        ) : posts.length === 0 ? (
+          <>
+            <EmptyFeedState />
+            {userId && <SuggestedConnections userId={userId} />}
+          </>
+        ) : (
+          <>
+            {/* Suggested connections strip when there are fewer than 5 posts */}
+            {posts.length < 5 && userId && (
+              <SuggestedConnections userId={userId} />
+            )}
+
+            {posts.map(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                currentUserId={userId || ''}
+                onLikeToggle={handleLikeToggle}
+                onCommentAdded={handleCommentAdded}
+                onDelete={handleDeletePost}
+              />
+            ))}
+            <div ref={sentinelRef} className="h-4" />
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-accent" />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {loading ? (
-        <div className="space-y-4">
-          <PostCardSkeleton />
-          <PostCardSkeleton />
-          <PostCardSkeleton />
+      {/* Right sidebar -- trending + economy (desktop only) */}
+      <aside className="hidden xl:block w-[260px] shrink-0">
+        <div className="sticky top-20">
+          <TrendingWidget />
         </div>
-      ) : posts.length === 0 ? (
-        <>
-          <EmptyFeedState />
-          {userId && <SuggestedConnections userId={userId} />}
-        </>
-      ) : (
-        <>
-          {/* Suggested connections strip when there are fewer than 5 posts */}
-          {posts.length < 5 && userId && (
-            <SuggestedConnections userId={userId} />
-          )}
-
-          {posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUserId={userId || ''}
-              onLikeToggle={handleLikeToggle}
-              onCommentAdded={handleCommentAdded}
-              onDelete={handleDeletePost}
-            />
-          ))}
-          <div ref={sentinelRef} className="h-4" />
-          {loadingMore && (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin text-accent" />
-            </div>
-          )}
-        </>
-      )}
+      </aside>
     </div>
   )
 }
