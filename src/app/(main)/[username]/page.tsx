@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProfileView from '@/components/profile/ProfileView'
-import type { Profile, Connection, Post } from '@/types/database'
+import { db } from '@/lib/neon'
+import type { Profile, Connection, Post, Experience, Education, Skill, Industry } from '@/types/database'
 
 interface Props {
   params: Promise<{ username: string }>
@@ -13,8 +14,8 @@ export default async function ProfilePage({ params }: Props) {
 
   // Try username first, then fall back to UUID lookup
   let profileData = null
-  const { data: byUsername } = await supabase
-    .from('profiles')
+  const { data: byUsername } = await db
+    .from<Profile>('profiles')
     .select('*')
     .eq('username', username)
     .single()
@@ -25,8 +26,8 @@ export default async function ProfilePage({ params }: Props) {
     // Check if it's a UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (uuidRegex.test(username)) {
-      const { data: byId } = await supabase
-        .from('profiles')
+      const { data: byId } = await db
+        .from<Profile>('profiles')
         .select('*')
         .eq('id', username)
         .single()
@@ -42,34 +43,38 @@ export default async function ProfilePage({ params }: Props) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: experiences } = await supabase
-    .from('experiences')
+  const { data: experiencesRaw } = await db
+    .from<Experience>('experiences')
     .select('*')
     .eq('user_id', profile.id)
     .order('start_date', { ascending: false })
+  const experiences = (experiencesRaw || []) as Experience[]
 
-  const { data: education } = await supabase
-    .from('education')
+  const { data: educationRaw } = await db
+    .from<Education>('education')
     .select('*')
     .eq('user_id', profile.id)
     .order('start_year', { ascending: false })
+  const education = (educationRaw || []) as Education[]
 
-  const { data: skills } = await supabase
-    .from('skills')
+  const { data: skillsRaw } = await db
+    .from<Skill>('skills')
     .select('*')
     .eq('user_id', profile.id)
+  const skills = (skillsRaw || []) as Skill[]
 
-  const { data: postsData } = await supabase
-    .from('posts')
+  const { data: postsDataRaw } = await db
+    .from<Post>('posts')
     .select('*')
     .eq('author_id', profile.id)
     .order('created_at', { ascending: false })
     .limit(20)
+  const postsData = (postsDataRaw || []) as Post[]
 
-  let industry = null
+  let industry: Industry | null = null
   if (profile.industry_id) {
-    const { data } = await supabase
-      .from('industries')
+    const { data } = await db
+      .from<Industry>('industries')
       .select('*')
       .eq('id', profile.industry_id)
       .single()
@@ -79,8 +84,8 @@ export default async function ProfilePage({ params }: Props) {
   // Check connection status
   let connectionStatus: 'none' | 'pending_sent' | 'pending_received' | 'connected' = 'none'
   if (user && user.id !== profile.id) {
-    const { data: connectionData } = await supabase
-      .from('connections')
+    const { data: connectionData } = await db
+      .from<Connection>('connections')
       .select('*')
       .or(`and(requester_id.eq.${user.id},addressee_id.eq.${profile.id}),and(requester_id.eq.${profile.id},addressee_id.eq.${user.id})`)
       .single()
@@ -98,13 +103,13 @@ export default async function ProfilePage({ params }: Props) {
   return (
     <ProfileView
       profile={profile}
-      experiences={experiences || []}
-      education={education || []}
-      skills={skills || []}
+      experiences={experiences}
+      education={education}
+      skills={skills}
       industry={industry}
       currentUserId={user?.id || null}
       connectionStatus={connectionStatus}
-      posts={(postsData as Post[]) || []}
+      posts={postsData}
     />
   )
 }

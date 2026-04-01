@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { db } from '@/lib/neon'
 
 export async function DELETE() {
   try {
@@ -13,7 +14,7 @@ export async function DELETE() {
     }
 
     // Delete profile (cascading deletes should handle related data)
-    const { error: profileError } = await supabase
+    const { error: profileError } = await db
       .from('profiles')
       .delete()
       .eq('id', user.id)

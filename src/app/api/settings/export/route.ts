@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { db } from '@/lib/neon'
+import type { Profile, Experience, Education, Skill, Post, Comment, Connection, Conversation, Message } from '@/types/database'
 
 export async function GET() {
   try {
@@ -23,21 +25,15 @@ export async function GET() {
       { data: conversations },
       { data: messages },
     ] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('experiences').select('*').eq('user_id', userId),
-      supabase.from('education').select('*').eq('user_id', userId),
-      supabase.from('skills').select('*').eq('user_id', userId),
-      supabase.from('posts').select('*').eq('author_id', userId),
-      supabase.from('comments').select('*').eq('author_id', userId),
-      supabase
-        .from('connections')
-        .select('*')
-        .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`),
-      supabase
-        .from('conversations')
-        .select('*')
-        .or(`participant_1.eq.${userId},participant_2.eq.${userId}`),
-      supabase.from('messages').select('*').eq('sender_id', userId),
+      db.from<Profile>('profiles').select('*').eq('id', userId).single(),
+      db.from<Experience>('experiences').select('*').eq('user_id', userId),
+      db.from<Education>('education').select('*').eq('user_id', userId),
+      db.from<Skill>('skills').select('*').eq('user_id', userId),
+      db.from<Post>('posts').select('*').eq('author_id', userId),
+      db.from<Comment>('comments').select('*').eq('author_id', userId),
+      db.from<Connection>('connections').select('*').or(`requester_id.eq.${userId},addressee_id.eq.${userId}`),
+      db.from<Conversation>('conversations').select('*').or(`participant_1.eq.${userId},participant_2.eq.${userId}`),
+      db.from<Message>('messages').select('*').eq('sender_id', userId),
     ])
 
     const exportData = {

@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { db } from '@/lib/neon'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -42,30 +43,30 @@ export async function GET(request: NextRequest) {
 
   if (user) {
     // Check if profile exists — trigger may have failed on first OAuth
-    let { data: profile } = await supabase
-      .from('profiles')
+    const { data: existingProfile } = await db
+      .from<{ username: string | null }>('profiles')
       .select('username')
       .eq('id', user.id)
       .maybeSingle()
 
-    if (!profile) {
+    if (!existingProfile) {
       // Trigger failed — create profile directly using the authenticated session
-      await supabase.from('profiles').upsert({
+      await db.from('profiles').upsert({
         id: user.id,
         full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name ?? null) as string | null,
         avatar_url: (user.user_metadata?.avatar_url ?? null) as string | null,
       })
-
-      const { data: retried } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', user.id)
-        .maybeSingle()
-      profile = retried
     }
 
     // New user — no username yet, send to profile setup
-    if (!profile?.username) {
+    // Re-fetch profile to check username
+    const { data: profileForCheck } = await db
+      .from<{ username: string | null }>('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!profileForCheck?.username) {
       destination = '/profile/edit'
     }
   }
